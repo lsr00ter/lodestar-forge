@@ -1,0 +1,67 @@
+services:
+    store:
+        image: postgres:14-alpine
+        ports:
+            - 5432:5432
+        environment:
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+            POSTGRES_USER: ${POSTGRES_USER:-}
+            POSTGRES_DB: ${POSTGRES_DB:-}
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+
+    nucleus:
+        build:
+            context: ./nucleus
+            dockerfile: Dockerfile
+        ports:
+            - ${NUCLEUS_PORT:-}:${NUCLEUS_PORT:-}
+        environment:
+            NUCLEUS_PORT: ${NUCLEUS_PORT:-}
+            NUCLEUS_SECRET: ${NUCLEUS_SECRET:-}
+            STORE_ENCRYPTION_KEY: ${STORE_ENCRYPTION_KEY:-}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+            POSTGRES_USER: ${POSTGRES_USER:-}
+            POSTGRES_DB: ${POSTGRES_DB:-}
+            POSTGRES_HOST: store
+            NODE_ENV: production
+        volumes:
+            - deployments:/app/deployments
+        depends_on:
+            - store
+        cap_add:
+            - NET_ADMIN # Needed by tailscale
+        devices:
+            - /dev/net/tun # Needed by tailscale
+
+    command:
+        build:
+            context: ./command
+            dockerfile: Dockerfile
+        ports:
+            - 3000:3000
+        environment:
+            COMMAND_SECRET: ${COMMAND_SECRET:-}
+            COMMAND_PORT: ${COMMAND_PORT:-}
+            HOSTNAME: ${COMMAND_LISTEN_ADDR:-}
+            NUCLEUS_PORT: ${NUCLEUS_PORT:-}
+            NEXTAUTH_URL: http://${COMMAND_HOSTNAME:-}:${COMMAND_PORT:-}
+            AUTH_TRUST_HOST: http://${COMMAND_HOSTNAME:-}:${COMMAND_PORT:-}
+        depends_on:
+            - store
+
+    radar:
+        build:
+            context: ./radar
+            dockerfile: Dockerfile
+        environment:
+            VT_API_KEY: ${VT_API_KEY:-}
+            NUCLEUS_PORT: ${NUCLEUS_PORT:-}
+            NUCLEUS_SECRET: ${NUCLEUS_SECRET:-}
+        depends_on:
+            - store
+            - nucleus
+
+volumes:
+    pgdata:
+    deployments:

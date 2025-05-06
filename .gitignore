@@ -1,0 +1,11 @@
+.env
+pgdata/
+nucleus/deployments/
+node_modules/
+dist/
+.DS_Store
+drizzle/
+.next/
+out/
+build/
+*.pem
