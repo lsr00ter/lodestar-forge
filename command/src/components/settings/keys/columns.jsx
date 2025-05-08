@@ -2,7 +2,6 @@
 
 import { DataTableColumnHeader } from "@/components/common/data-table/column-header";
 import { MoreHorizontal } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -12,7 +11,6 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-    AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 import { deleteKey } from "@/actions/keys";
@@ -23,7 +21,6 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";

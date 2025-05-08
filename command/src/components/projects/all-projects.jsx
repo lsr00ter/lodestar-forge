@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/card";
 
 import { ProjectCard } from "@/components/projects/project-card";
-import { PlusCircle } from "lucide-react";
 import { CreateProject } from "@/components/projects/create-project";
 import { Input } from "../ui/input";
 import { ScrollArea } from "../ui/scroll-area";

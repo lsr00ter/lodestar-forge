@@ -10,14 +10,10 @@ import {
 } from "../ui/card";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
-import { Button } from "../ui/button";
 import { useState } from "react";
 import { Textarea } from "../ui/textarea";
 
 export function DetailsCard({ className, deployment }) {
-    const [isEditing, setIsEditing] = useState(false);
-    const [changesMade, setChangesMade] = useState(false);
-
     return (
         <Card className={cn(className)}>
             <CardHeader className="flex flex-row items-center justify-between">
