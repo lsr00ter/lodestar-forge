@@ -105,7 +105,7 @@ export function CreateUser() {
                         <Label htmlFor="email">Email*</Label>
                         <Input
                             id="email"
-                            placeholder="john.doe@lodestar-security.com"
+                            placeholder="john.doe@lodestar-forge.local"
                             value={email}
                             type="email"
                             className={
