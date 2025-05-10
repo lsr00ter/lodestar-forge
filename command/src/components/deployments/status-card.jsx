@@ -19,6 +19,12 @@ import {
     configureDeployment,
 } from "@/actions/deployments";
 import { RefreshButton } from "./refresh-button";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "../ui/tooltip";
 
 export function StatusCard({ className, deployment, infrastructure }) {
     return (
@@ -169,6 +175,31 @@ export function StatusCard({ className, deployment, infrastructure }) {
                 <div className="flex w-full flex-row justify-between items-center">
                     <div className="flex gap-2 flex-row">
                         {(() => {
+                            const hasConfigurations = infrastructure.some(
+                                (i) =>
+                                    i.configurations !== null &&
+                                    i.configurations.length > 0,
+                            );
+
+                            const resources = infrastructure.flatMap(
+                                (i) => i.resources,
+                            );
+
+                            const hasTailscaleIps = resources.every(
+                                (resource) => {
+                                    // Only care about aws_instance or digitalocean_droplet
+                                    if (
+                                        resource.resourceType ===
+                                            "aws_instance" ||
+                                        resource.resourceType ===
+                                            "digitalocean_droplet"
+                                    ) {
+                                        return !!resource.tailscaleIp; // must have tailscaleIp
+                                    }
+                                    return true; // other types are ignored
+                                },
+                            );
+
                             switch (deployment?.status) {
                                 case "ready-to-prepare":
                                     return (
@@ -216,7 +247,7 @@ export function StatusCard({ className, deployment, infrastructure }) {
                                 case "live":
                                 case "failed":
                                     return (
-                                        <>
+                                        <TooltipProvider>
                                             <Button
                                                 variant="secondary"
                                                 size="sm"
@@ -235,26 +266,41 @@ export function StatusCard({ className, deployment, infrastructure }) {
                                             >
                                                 <Undo2 /> Deploy
                                             </Button>
-                                            <Button
-                                                onClick={() =>
-                                                    configureDeployment(
-                                                        deployment?.id,
-                                                    )
-                                                }
-                                                size="sm"
-                                                disabled={
-                                                    !infrastructure.some(
-                                                        (i) =>
-                                                            i.configurations !==
-                                                                null &&
-                                                            i.configurations
-                                                                .length > 0,
-                                                    )
-                                                }
-                                            >
-                                                Configure
-                                            </Button>
-                                        </>
+
+                                            {!hasConfigurations ||
+                                            !hasTailscaleIps ? (
+                                                <Tooltip delayDuration={25}>
+                                                    <TooltipTrigger>
+                                                        <Button
+                                                            size="sm"
+                                                            disabled
+                                                        >
+                                                            Configure
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        {!hasConfigurations
+                                                            ? "Add configurations to infrastructure first."
+                                                            : "Waiting for Tailscale IPs to be assigned."}
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            ) : (
+                                                <Button
+                                                    onClick={() =>
+                                                        configureDeployment(
+                                                            deployment?.id,
+                                                        )
+                                                    }
+                                                    size="sm"
+                                                    disabled={
+                                                        !hasConfigurations ||
+                                                        !hasTailscaleIps
+                                                    }
+                                                >
+                                                    Configure
+                                                </Button>
+                                            )}
+                                        </TooltipProvider>
                                     );
                                 case "configuring":
                                 case "destroying":
