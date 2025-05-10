@@ -8,13 +8,10 @@ import {
     CardContent,
     CardDescription,
 } from "../ui/card";
-import { Label } from "../ui/label";
 import {
     Table,
     TableBody,
-    TableCaption,
     TableCell,
-    TableFooter,
     TableHead,
     TableHeader,
     TableRow,

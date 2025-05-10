@@ -2,7 +2,6 @@
 
 import { DataTableColumnHeader } from "@/components/common/data-table/column-header";
 import { MoreHorizontal } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
     AlertDialog,
     AlertDialogAction,

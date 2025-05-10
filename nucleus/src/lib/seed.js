@@ -54,21 +54,21 @@ const main = async () => {
         console.log(`
 ###################################
 # Forge Admin Credentials
-# User: admin@lodestar-forge.com
+# User: admin@lodestar-forge.local
 # Password: ${password}
 ###################################
 `);
         await db.insert(users).values([
             {
                 name: "Forge Admin",
-                email: "admin@lodestar-forge.com",
+                email: "admin@lodestar-forge.local",
                 password: await hash(password),
                 role: "admin",
             },
             {
                 id: "1e768b85-061c-42db-b466-d875001135eb",
                 name: "radar-service",
-                email: "radar@lodestar-security.com",
+                email: "radar@lodestar-forge.local",
                 password: await hash(crypto.randomBytes(64).toString("hex")),
                 role: "service",
             },

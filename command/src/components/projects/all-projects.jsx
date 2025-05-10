@@ -8,7 +8,6 @@ import {
 } from "@/components/ui/card";
 
 import { ProjectCard } from "@/components/projects/project-card";
-import { PlusCircle } from "lucide-react";
 import { CreateProject } from "@/components/projects/create-project";
 import { Input } from "../ui/input";
 import { ScrollArea } from "../ui/scroll-area";
@@ -60,7 +59,7 @@ export default function AllProjects({ projects }) {
                     value={searchValue}
                     onChange={(e) => setSearchValue(e.target.value)}
                 />
-                <ScrollArea className="h-[calc(100vh-450px)]">
+                <ScrollArea className="min-h-[calc(100vh-700px)] max-h-[calc(100vh-450px)]">
                     {filteredProjects.length ? (
                         <div className="flex flex-col gap-2">
                             {filteredProjects.map((project) => (
@@ -71,7 +70,7 @@ export default function AllProjects({ projects }) {
                             ))}
                         </div>
                     ) : (
-                        <div className="flex rounded-md h-[calc(100vh-450px)] w-full items-center justify-center border border-dashed">
+                        <div className="flex rounded-md min-h-[calc(100vh-700px)] max-h-[calc(100vh-450px)] w-full items-center justify-center border border-dashed">
                             <p className="text-sm text-muted-foreground">
                                 No projects found.
                             </p>

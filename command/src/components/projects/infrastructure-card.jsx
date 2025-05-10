@@ -9,7 +9,6 @@ import {
     CardTitle,
     CardContent,
     CardDescription,
-    CardFooter,
 } from "../ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../ui/chart";
 import { cn } from "@/lib/utils";

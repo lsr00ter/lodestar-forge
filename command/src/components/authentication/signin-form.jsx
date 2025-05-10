@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -13,6 +11,8 @@ import { Label } from "@/components/ui/label";
 
 import { signIn } from "@/lib/auth";
 import { AuthError } from "next-auth";
+import { redirect } from "next/navigation";
+import { SigninError } from "./signin-error";
 
 export function SigninForm() {
     return (
@@ -31,9 +31,8 @@ export function SigninForm() {
                             await signIn("credentials", formData);
                         } catch (error) {
                             if (error instanceof AuthError) {
-                                console.log(error);
+                                redirect(`/auth/signin?error=${error.type}`);
                             }
-                            throw error;
                         }
                     }}
                 >
@@ -60,18 +59,12 @@ export function SigninForm() {
                                 required
                             />
                         </div>
+                        <SigninError />
                         <Button type="submit" className="w-full">
                             Sign In
                         </Button>
                     </div>
                 </form>
-
-                <div className="mt-4 text-center text-sm">
-                    Don&apos;t have an account?{" "}
-                    <Link href="#" className="underline">
-                        Contact Administrator
-                    </Link>
-                </div>
             </CardContent>
         </Card>
     );
