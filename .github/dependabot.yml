@@ -13,7 +13,7 @@ updates:
     schedule:
       interval: "weekly"
     groups:
-    dev-deps:
-      dependency-type: "development"
-    prod-deps:
-      dependency-type: "production"
+      dev-deps:
+        dependency-type: "development"
+      prod-deps:
+        dependency-type: "production"
