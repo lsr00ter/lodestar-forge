@@ -479,7 +479,7 @@ export const prepareDeployment = async (req, res) => {
             infrastructureId,
             resourceName: resource.name,
             resourceType: resource.type,
-            terraformId: resource.instances[0].attributes.id,
+            providerId: resource.instances[0].attributes.id,
             privateIp:
                 resource.instances[0].attributes.private_ip ||
                 resource.instances[0].attributes.cidr_block ||
@@ -652,7 +652,7 @@ export const deployDeployment = async (req, res) => {
                     await db
                         .update(resources)
                         .set({
-                            terraformId:
+                            providerId:
                                 stateResource.instances[0].attributes.id,
                             privateIp:
                                 stateResource.instances[0].attributes
