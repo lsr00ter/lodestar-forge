@@ -7,7 +7,7 @@ import "prismjs/themes/prism-tomorrow.min.css";
 
 export const HclEditor = ({ code, setCode }) => {
     return (
-        <div className="h-[200px] overflow-auto border border-1 rounded-md px-3 py-2">
+        <div className="h-[200px] overflow-auto border rounded-md px-3 py-2">
             <Editor
                 value={code}
                 onValueChange={(code) => setCode(code)}
@@ -24,7 +24,7 @@ resource "aws_instance" "basic" {
     Name = "Short C2"
   }
 }`}
-                className="font-mono min-h-[200px] text-sm"
+                className="font-mono min-h-[200px] text-sm focus:border-none focus:outline-none focus:ring-0"
             />
         </div>
     );

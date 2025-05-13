@@ -509,12 +509,12 @@ export const deployDeployment = async (req, res) => {
     }
 
     const deploymentData = await db.transaction(async (tx) => {
-        const original = await db
+        const [original] = await db
             .select()
             .from(deployments)
             .where(eq(deployments.id, deploymentId));
 
-        const updated = await db
+        const [updated] = await db
             .update(deployments)
             .set({ status: "deploying" })
             .where(eq(deployments.id, deploymentId))
