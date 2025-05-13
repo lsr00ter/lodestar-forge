@@ -129,6 +129,31 @@ export const createInfrastructure = async (req, res) => {
         const { name, infrastructureTemplateId, description, variables } =
             req.body;
 
+        if (!name) {
+            return res.status(400).json({ error: "error 'name' is required" });
+        }
+
+        if (!infrastructureTemplateId) {
+            return res.status(400).json({
+                error: "error 'infrastructureTemplateId' is required",
+            });
+        }
+
+        console.log(variables);
+        console.log(
+            variables.length,
+            !variables.every((variable) => variable.name && variable.value),
+        );
+
+        if (
+            variables.length &&
+            !variables.every((variable) => variable.name && variable.value)
+        ) {
+            return res
+                .status(400)
+                .json({ error: "error 'variables' is invalid" });
+        }
+
         const deploymentDir = path.join("/app/deployments", deploymentId);
         const terraformDir = path.join(deploymentDir, "terraform");
 
@@ -159,8 +184,6 @@ export const createInfrastructure = async (req, res) => {
                 description,
             })
             .returning();
-
-        res.status(200).json(newInfrastructure);
 
         const settingsData = await db.select().from(settings);
         const tagSetting = settingsData.find(
@@ -273,6 +296,8 @@ export const createInfrastructure = async (req, res) => {
             path.join(terraformDir, `${newInfrastructure.id}.tf`),
             finalContent,
         );
+
+        return res.status(200).json(newInfrastructure);
     } catch (error) {
         return res.status(500).json({ error: error.message });
     }
