@@ -29,7 +29,7 @@ export function SigninForm() {
                         );
                     }}
                 >
-                    <div className="grid gap-4 bg-blue-500">
+                    <div className="grid gap-4">
                         <div className="grid gap-2">
                             <Label htmlFor="email">Email</Label>
                             <Input
