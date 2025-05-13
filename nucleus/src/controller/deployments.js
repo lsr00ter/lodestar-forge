@@ -509,12 +509,12 @@ export const deployDeployment = async (req, res) => {
     }
 
     const deploymentData = await db.transaction(async (tx) => {
-        const original = await db
+        const [original] = await db
             .select()
             .from(deployments)
             .where(eq(deployments.id, deploymentId));
 
-        const updated = await db
+        const [updated] = await db
             .update(deployments)
             .set({ status: "deploying" })
             .where(eq(deployments.id, deploymentId))
@@ -846,6 +846,16 @@ export const configureDeployment = async (req, res) => {
             "up",
             `--auth-key=${newKey.key}`,
             "--accept-dns=false",
+            `--hostname=${
+                String(
+                    "lodestar-forge-nucleus" + "-" + deploymentId.split("-")[0],
+                )
+                    .toLowerCase() // Lowercase everything
+                    .replace(/[^a-z0-9-]+/g, "-") // Replace invalid characters with hyphen
+                    .replace(/^-+|-+$/g, "") // Trim leading/trailing hyphens
+                    .replace(/-+/g, "-") // Collapse multiple hyphens
+                    .slice(0, 63) // Trim to 63 characters max
+            }`,
         ]);
 
         await runCommand(

@@ -139,12 +139,6 @@ export const createInfrastructure = async (req, res) => {
             });
         }
 
-        console.log(variables);
-        console.log(
-            variables.length,
-            !variables.every((variable) => variable.name && variable.value),
-        );
-
         if (
             variables.length &&
             !variables.every((variable) => variable.name && variable.value)
