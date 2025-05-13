@@ -1,10 +1,13 @@
 import { AppSidebar } from "@/components/common/navigation/navigation-sidebar";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { apiFetch } from "@/lib/utils";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 
 export default async function RootLayout(props) {
     const params = await props.params;
+    const cookieStore = await cookies();
+    const defaultOpen = cookieStore.get("sidebar_state")?.value === "true";
 
     const { children } = props;
 
@@ -14,7 +17,7 @@ export default async function RootLayout(props) {
         redirect("/projects");
 
     return (
-        <SidebarProvider>
+        <SidebarProvider defaultOpen={defaultOpen}>
             <AppSidebar projectId={projectId} />
             <main className="bg-muted/40 flex-1 overflow-hidden">
                 <div className="h-full overflow-auto">{children}</div>
