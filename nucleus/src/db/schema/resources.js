@@ -14,8 +14,7 @@ export const resources = pgTable("resources", {
     ),
     resourceType: text("resourceType"),
     resourceName: text("resourceName"),
-    // TODO: Rename to provider ID
-    terraformId: text("terraformId"),
+    providerId: text("providerId"),
     publicIp: text("publicIp"),
     privateIp: text("privateIp"),
     tailscaleIp: text("tailscaleIp"),

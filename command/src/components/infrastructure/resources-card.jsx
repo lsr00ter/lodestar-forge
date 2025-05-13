@@ -65,8 +65,8 @@ export function ResourcesCard({ className, infrastructure }) {
                                             {resource?.id ? resource.id : "-"}
                                         </TableCell>
                                         <TableCell>
-                                            {resource?.terraformId
-                                                ? resource.terraformId
+                                            {resource?.providerId
+                                                ? resource.providerId
                                                 : "-"}
                                         </TableCell>
                                     </TableRow>

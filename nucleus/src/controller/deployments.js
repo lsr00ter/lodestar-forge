@@ -479,7 +479,7 @@ export const prepareDeployment = async (req, res) => {
             infrastructureId,
             resourceName: resource.name,
             resourceType: resource.type,
-            terraformId: resource.instances[0].attributes.id,
+            providerId: resource.instances[0].attributes.id,
             privateIp:
                 resource.instances[0].attributes.private_ip ||
                 resource.instances[0].attributes.cidr_block ||
@@ -508,17 +508,30 @@ export const deployDeployment = async (req, res) => {
             .json({ error: "error 'deploymentId' is required" });
     }
 
-    const [deploymentData] = await db
-        .update(deployments)
-        .set({ status: "deploying" })
-        .where(eq(deployments.id, deploymentId))
-        .returning();
+    const deploymentData = await db.transaction(async (tx) => {
+        const original = await db
+            .select()
+            .from(deployments)
+            .where(eq(deployments.id, deploymentId));
 
-    if (!deploymentData) {
+        const updated = await db
+            .update(deployments)
+            .set({ status: "deploying" })
+            .where(eq(deployments.id, deploymentId))
+            .returning();
+
+        return { original, updated };
+    });
+
+    if (!deploymentData.original) {
         return res.status(404).json({ error: "Deployment not found" });
     }
 
-    // TODO: actually check if deployment is already deploying
+    if (deploymentData.original.status === "deploying") {
+        return res
+            .status(400)
+            .json({ error: "Deployment is already deploying" });
+    }
 
     await db
         .update(infrastructure)
@@ -535,7 +548,7 @@ export const deployDeployment = async (req, res) => {
     const [platform] = await db
         .select()
         .from(integrations)
-        .where(eq(integrations.id, deploymentData.platformId));
+        .where(eq(integrations.id, deploymentData.original.platformId));
 
     const envVars = {
         TF_CLI_ARGS: "-no-color",
@@ -556,7 +569,7 @@ export const deployDeployment = async (req, res) => {
         // Format terraform files to prevent issues
         await runCommand(
             deploymentId,
-            deploymentData.projectId,
+            deploymentData.original.projectId,
             "terraform",
             ["fmt"],
             { TF_CLI_ARGS: "-no-color" },
@@ -565,7 +578,7 @@ export const deployDeployment = async (req, res) => {
 
         await runCommand(
             deploymentId,
-            deploymentData.projectId,
+            deploymentData.original.projectId,
             "terraform",
             ["apply", "-auto-approve"],
             envVars,
@@ -617,8 +630,9 @@ export const deployDeployment = async (req, res) => {
                                 env: {
                                     AWS_ACCESS_KEY_ID: platform.keyId,
                                     AWS_SECRET_ACCESS_KEY: platform.secretKey,
-                                    AWS_DEFAULT_REGION: deploymentData.region
-                                        ? deploymentData.region
+                                    AWS_DEFAULT_REGION: deploymentData.original
+                                        .region
+                                        ? deploymentData.original.region
                                         : stateResource.instances[0].attributes.arn.split(
                                               ":",
                                           )[3],
@@ -652,7 +666,7 @@ export const deployDeployment = async (req, res) => {
                     await db
                         .update(resources)
                         .set({
-                            terraformId:
+                            providerId:
                                 stateResource.instances[0].attributes.id,
                             privateIp:
                                 stateResource.instances[0].attributes

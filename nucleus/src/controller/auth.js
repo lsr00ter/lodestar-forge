@@ -16,7 +16,6 @@ export const login = async (req, res) => {
 
     if (rows.length < 1) {
         // Verify against fake hash to equalise the response times.
-        // TODO: Fix this? Doens't work... still vulnerable to time-based user enumeration.
         await verify(
             "$argon2i$v=19$m=16,t=2,p=1$" +
                 [...Array(12)]

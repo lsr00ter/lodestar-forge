@@ -1,4 +1,3 @@
-# TODO: Improve this dockerfile
 FROM node:latest
 
 RUN apt update && apt -y install gnupg software-properties-common netcat-traditional unzip pipx
