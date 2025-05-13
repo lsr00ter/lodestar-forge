@@ -281,7 +281,7 @@ export function StatusCard({ className, deployment, infrastructure }) {
                                                     <TooltipContent>
                                                         {!hasConfigurations
                                                             ? "Add configurations to infrastructure first."
-                                                            : "Waiting for Tailscale IPs to be assigned."}
+                                                            : "Waiting for Tailscale IPs to be assigned..."}
                                                     </TooltipContent>
                                                 </Tooltip>
                                             ) : (
