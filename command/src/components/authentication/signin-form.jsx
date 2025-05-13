@@ -1,3 +1,4 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -8,11 +9,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-import { signIn } from "@/lib/auth";
-import { AuthError } from "next-auth";
-import { redirect } from "next/navigation";
 import { SigninError } from "./signin-error";
+import { authenticate } from "@/actions/auth";
 
 export function SigninForm() {
     return (
@@ -26,17 +24,12 @@ export function SigninForm() {
             <CardContent>
                 <form
                     action={async (formData) => {
-                        "use server";
-                        try {
-                            await signIn("credentials", formData);
-                        } catch (error) {
-                            if (error instanceof AuthError) {
-                                redirect(`/auth/signin?error=${error.type}`);
-                            }
-                        }
+                        await authenticate(formData).then(
+                            () => window.location.reload(), // Force refresh due to authJS bug
+                        );
                     }}
                 >
-                    <div className="grid gap-4">
+                    <div className="grid gap-4 bg-blue-500">
                         <div className="grid gap-2">
                             <Label htmlFor="email">Email</Label>
                             <Input
