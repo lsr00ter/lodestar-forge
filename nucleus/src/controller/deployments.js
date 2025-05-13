@@ -846,6 +846,16 @@ export const configureDeployment = async (req, res) => {
             "up",
             `--auth-key=${newKey.key}`,
             "--accept-dns=false",
+            `--hostname=${
+                String(
+                    "lodestar-forge-nucleus" + "-" + deploymentId.split("-")[0],
+                )
+                    .toLowerCase() // Lowercase everything
+                    .replace(/[^a-z0-9-]+/g, "-") // Replace invalid characters with hyphen
+                    .replace(/^-+|-+$/g, "") // Trim leading/trailing hyphens
+                    .replace(/-+/g, "-") // Collapse multiple hyphens
+                    .slice(0, 63) // Trim to 63 characters max
+            }`,
         ]);
 
         await runCommand(
