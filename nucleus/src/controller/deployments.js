@@ -842,6 +842,11 @@ export const configureDeployment = async (req, res) => {
     const newKey = await tailscaleResult.json();
 
     try {
+        // Disconnect from tailscale before reconnecting (sometimes it remains connected)
+        await runCommand(deploymentId, deploymentData.projectId, "tailscale", [
+            "logout",
+        ]);
+
         await runCommand(deploymentId, deploymentData.projectId, "tailscale", [
             "up",
             `--auth-key=${newKey.key}`,
