@@ -629,10 +629,17 @@ export function InfrastructureCard({
                                 <DialogFooter>
                                     <Button
                                         disabled={
-                                            !variables.every(
-                                                (v) =>
-                                                    v.value && v.value !== "",
-                                            )
+                                            !variables.every((v) => {
+                                                if (
+                                                    v.type !==
+                                                    "infrastructure-id"
+                                                )
+                                                    return (
+                                                        v.value &&
+                                                        v.value !== ""
+                                                    );
+                                                return true;
+                                            })
                                         }
                                         onClick={() => {
                                             handleSubmit();

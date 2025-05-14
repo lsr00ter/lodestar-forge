@@ -1,6 +1,7 @@
 import { SigninForm } from "@/components/authentication/signin-form";
 import { auth } from "@/lib/auth";
 import { Anvil } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -16,9 +17,12 @@ export default async function Signin() {
                     target="_blank"
                     className="flex items-center gap-2 self-center font-medium"
                 >
-                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                        <Anvil className="size-4" />
-                    </div>
+                    <Image
+                        src="/logo-small.png"
+                        height={24}
+                        width={24}
+                        alt="Logo"
+                    />
                     Lodestar Forge
                 </Link>
                 <SigninForm />
