@@ -141,7 +141,13 @@ export const createInfrastructure = async (req, res) => {
 
         if (
             variables.length &&
-            !variables.every((variable) => variable.name && variable.value)
+            !variables.every((variable) => {
+                if (variable.type !== "infrastructure-id")
+                    return (
+                        variable.name && variable.value && variable.value !== ""
+                    );
+                return true;
+            })
         ) {
             return res
                 .status(400)
@@ -249,11 +255,14 @@ export const createInfrastructure = async (req, res) => {
                     );
 
                     const newKey = await tailscaleResult.json();
+
                     const userDataScript = tailscaleUserData({
                         authKey: newKey.key,
                         resourceId: newInfrastructure.id,
                         resourceName: name,
-                        custom: userDataSetting.value,
+                        custom: userDataSetting?.value
+                            ? userDataSetting.value
+                            : "",
                     });
 
                     updatedResource = injectUserDataScript(

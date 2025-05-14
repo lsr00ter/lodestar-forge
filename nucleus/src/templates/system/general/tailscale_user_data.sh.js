@@ -2,7 +2,7 @@ export const tailscaleUserData = ({
     authKey,
     resourceId,
     resourceName,
-    custom,
+    custom = "",
 }) => `
 #!/bin/bash
 
