@@ -3,7 +3,7 @@
 <!-- PROJECT LOGO -->
 <div align="center">
   <a href="https://github.com/c0nf1den71al/Lodestar-Forge">
-    <img src="/images/header.png" alt="Logo" width="250" height="100">
+    <img src="/images/header.png" alt="Logo" width="400" height="166.6">
   </a>
   <br /><br />
   <p align="center">
