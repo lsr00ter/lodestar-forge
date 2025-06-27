@@ -150,7 +150,7 @@ docker compose -f docker-compose.dev.yml up
 
 - [x] ~Digital Ocean Support~
 - [x] ~Documentation~
-- [ ] Landing page
+- [x] ~Landing page~
 - [ ] Deployment sharing/import/export
 - [ ] Additional cloud providers
 - [ ] Headscale support
@@ -204,6 +204,6 @@ Project Link: [https://github.com/c0nf1den71al/Lodestar-Forge](https://github.co
 
 Below are some Acknowledgments / Shoutouts for some awesome people:
 
-* [@sudonoodle](https://github.com/sudonoodle) - One of my closest friends and an awesome red teamer. Provided invaluable advice (and emotional support). 
+* [@sudonoodle](https://github.com/sudonoodle) - One of my closest friends and an awesome red teamer. Provided invaluable advice (and emotional support).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
