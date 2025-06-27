@@ -46,11 +46,20 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { SortableConfiguration } from "./sortable-configuration";
-import { PlusCircle } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon, PlusCircle } from "lucide-react";
 import { ScrollArea } from "../ui/scroll-area";
 import { Input } from "../ui/input";
 import { v4 } from "uuid";
 import { addInfrastructureConfigurations } from "@/actions/infrastructure";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "../ui/command";
 
 export function ConfigurationCard({
   className,
@@ -69,12 +78,16 @@ export function ConfigurationCard({
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [templateSelectOpen, setTemplateSelectOpen] = useState(false);
 
   const [variables, setVariables] = useState([]);
   const [showTemplateVariables, setShowTemplateVariables] = useState(false);
   const [showFileVariables, setShowFileVariables] = useState(false);
 
   const itemIds = useMemo(() => items.map((item) => item.id), [items]);
+  const configurationTemplates = templates.filter(
+    (template) => template.type === "configuration",
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -778,37 +791,76 @@ export function ConfigurationCard({
                             Required fields are marked with an asterisk.
                           </DialogDescription>
                         </DialogHeader>
-                        <div className="">
+                        <div className="grid gap-2">
                           <Label htmlFor="template">Template*</Label>
-                          <Select
-                            value={selectedTemplate}
-                            onValueChange={(value) => {
-                              setVariables([]);
-                              setSelectedTemplate(value);
-                            }}
+                          <Popover
+                            open={templateSelectOpen}
+                            onOpenChange={setTemplateSelectOpen}
                           >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a template" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectGroup>
-                                <SelectLabel>Templates</SelectLabel>
-                                {templates
-                                  .filter(
-                                    (template) =>
-                                      template.type === "configuration",
-                                  )
-                                  .map((template) => (
-                                    <SelectItem
-                                      key={template.id}
-                                      value={template.id}
-                                    >
-                                      {template.name}
-                                    </SelectItem>
-                                  ))}
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={open}
+                                className={`w-full justify-between font-normal ${selectedTemplate ? "" : "text-muted-foreground"}`}
+                              >
+                                {selectedTemplate
+                                  ? configurationTemplates.find(
+                                      (t) => t.id === selectedTemplate,
+                                    ).name
+                                  : "Select Template"}
+                                <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
+                              <Command
+                                filter={(value, search, keywords) => {
+                                  return keywords
+                                    .join(" ")
+                                    .toLowerCase()
+                                    .includes(search.toLowerCase())
+                                    ? 1
+                                    : 0;
+                                }}
+                              >
+                                <CommandInput placeholder="Search templates..." />
+                                <CommandList>
+                                  <CommandEmpty>
+                                    No template found.
+                                  </CommandEmpty>
+                                  <CommandGroup>
+                                    {configurationTemplates.map((template) => (
+                                      <CommandItem
+                                        key={template.id}
+                                        value={template.id}
+                                        keywords={[template.name]}
+                                        onSelect={(value) => {
+                                          const templateVariables =
+                                            configurationTemplates.find(
+                                              (t) => t.id === value,
+                                            ).variables;
+
+                                          setVariables([...templateVariables]);
+                                          setSelectedTemplate(value);
+                                          setTemplateSelectOpen(false);
+                                        }}
+                                      >
+                                        <CheckIcon
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            selectedTemplate === template.id
+                                              ? "opacity-100"
+                                              : "opacity-0",
+                                          )}
+                                        />
+                                        {template.name}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                         </div>
                         <DialogFooter>
                           <div className="w-full flex flex-row justify-between items-center">
