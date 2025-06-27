@@ -53,7 +53,7 @@
 ![Lodestar Forge Screen Shot](/images/overview.gif)
 
 > [!CAUTION]
-> Lodestar Forge is still in Alpha. Some feautres of the platform may be unstable and therefore all infrastructure should be verified manually directly within your cloud provider console. We are not responsible for any unexpected billing which may occur due to bugs in the platform.
+> Lodestar Forge is still in early development. Some feautres of the platform may be unstable and therefore all infrastructure should be verified manually directly within your cloud provider console. We are not responsible for any unexpected billing which may occur due to bugs in the platform.
 
 Introducing Lodestar Forge (or Forge), an infrastructure creation and management platform, specifically designed for red team engagements.
 
