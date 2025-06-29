@@ -102,13 +102,10 @@ export function NavUser({ user }) {
                 <User className="h-4" />
                 Account
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell className="h-4" />
-                Notifications
+              <DropdownMenuItem onClick={() => router.push("/settings")}>
+                <Settings className="h-4" />
+                Settings
               </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuGroup>
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
                   <SunMoon className="h-4" />
@@ -131,10 +128,6 @@ export function NavUser({ user }) {
                   </DropdownMenuRadioGroup>
                 </DropdownMenuSubContent>
               </DropdownMenuSub>
-              <DropdownMenuItem onClick={() => router.push("/settings")}>
-                <Settings className="h-4" />
-                Settings
-              </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
