@@ -41,8 +41,8 @@ export const SettingsSidebar = () => {
       icon: PaintRoller,
     },
     {
-      title: "Infrastructure",
-      url: `/settings/infrastructure`,
+      title: "Deployment",
+      url: `/settings/deployment`,
       icon: Server,
     },
     {
@@ -110,7 +110,7 @@ export const SettingsSidebar = () => {
       <SidebarFooter>
         <Link href="https://lodestar-forge.com" target="_blank">
           <p className="text-muted-foreground w-full text-xs pb-2 select-none">
-            Lodestar Forge v0.1.0
+            Lodestar Forge v0.2.0
           </p>
         </Link>
         <Link href="/projects">
