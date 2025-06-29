@@ -14,9 +14,9 @@
     <br />
     <a href="https://api.lodestar-forge.com/reference">API Reference</a>
     ·
-    <a href="https://github.com/c0nf1den71al/Lodestar-Forge/issues">Report Bug</a>
+    <a href="https://lodestar-forge.com">Landing Page</a>
     ·
-    <a href="https://github.com/c0nf1den71al/Lodestar-Forge/issues">Request Feature</a>
+    <a href="https://github.com/c0nf1den71al/Lodestar-Forge/issues">Report Bug</a>
   </p>
 </div>
 
@@ -53,7 +53,7 @@
 ![Lodestar Forge Screen Shot](/images/overview.gif)
 
 > [!CAUTION]
-> Lodestar Forge is still in early development. Some feautres of the platform may be unstable and therefore all infrastructure should be verified manually directly within your cloud provider console. We are not responsible for any unexpected billing which may occur due to bugs in the platform.
+> Lodestar Forge is still in early development. Some feautres of the platform may be unstable and therefore all infrastructure should be verified manually, directly within your cloud provider console. We are not responsible for any unexpected billing which may occur due to bugs in the platform.
 
 Introducing Lodestar Forge (or Forge), an infrastructure creation and management platform, specifically designed for red team engagements.
 
@@ -71,7 +71,7 @@ Forge is designed for operators - It abstracts away the complexity of managing i
 
 ✅ **Scalability** - Design infrastructure to scale horizontally, accommodating varying sizes of engagements and adapting to changing operational requirements.
 
-✅ **Modular Architecture** - Design infrastructure components (e.g., C2 servers, redirectors, phishing servers) as interchangeable templates, allowing for flexible and reusable configurations tailored to specific engagement needs.
+✅ **Modular Architecture** - Design infrastructure components (e.g. C2 servers, redirectors, phishing servers) as interchangeable templates, allowing for flexible and reusable configurations tailored to specific engagement needs.
 
 ✅ **Infrastructure as Code** - Leverage tools like Terraform and Ansible to define, deploy, and manage infrastructure consistently across various environments.
 
@@ -185,7 +185,7 @@ See the [open issues](https://github.com/c0nf1den71al/Lodestar-Forge/issues) for
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
 
 If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
+Don't forget to give the project a star!
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
