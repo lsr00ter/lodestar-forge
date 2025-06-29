@@ -217,11 +217,11 @@ export const columns = [
                         key={variable.name}
                         className="py-2 flex w-full justify-between flex-row"
                       >
-                        <div>
+                        <div className="grid gap-2">
                           <Label>Variable Name*</Label>
                           <Input disabled value={variable.name} />
                         </div>
-                        <div>
+                        <div className="grid gap-2">
                           <Label>Variable Type*</Label>
                           <Select
                             onValueChange={(value) => {

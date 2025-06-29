@@ -61,11 +61,13 @@ export const DeploymentSettings = ({ settingsData }) => {
       <ScrollArea>
         <div className="grid gap-4">
           <div className="grid gap-2">
-            <Label>Ansible Output</Label>
-            <p className="text-sm text-muted-foreground">
-              The default user-data script will install Tailscale. However, you
-              can add extra code here.
-            </p>
+            <div className="grid gap-1">
+              <Label>Ansible Output</Label>
+              <p className="text-xs text-muted-foreground">
+                The default user-data script will install Tailscale. However,
+                you can add extra code here.
+              </p>
+            </div>
             <Select value={ansibleOutput} onValueChange={setAnsibleOutput}>
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
@@ -77,11 +79,13 @@ export const DeploymentSettings = ({ settingsData }) => {
             </Select>
           </div>
           <div className="grid gap-2">
-            <Label>Extra User-Data</Label>
-            <p className="text-sm text-muted-foreground">
-              The default user-data script will install Tailscale. However, you
-              can add extra code here.
-            </p>
+            <div className="grid gap-1">
+              <Label>Extra User-Data</Label>
+              <p className="text-xs text-muted-foreground">
+                The default user-data script will install Tailscale. However,
+                you can add extra code here.
+              </p>
+            </div>
             <Textarea
               value={userData}
               onChange={(e) => {
@@ -90,11 +94,13 @@ export const DeploymentSettings = ({ settingsData }) => {
             />
           </div>
           <div className="grid gap-2">
-            <Label>Tailscale Tag</Label>
-            <p className="text-sm text-muted-foreground">
-              Tailscale tag applied to both Forge Nucleus and default
-              infrastructure. Must be defined within Tailscale ACLs
-            </p>
+            <div className="grid gap-1">
+              <Label>Tailscale Tag</Label>
+              <p className="text-xs text-muted-foreground">
+                Tailscale tag applied to both Forge Nucleus and default
+                infrastructure. Must be defined within Tailscale ACLs
+              </p>
+            </div>
             <Input
               placeholder="lodestar-forge"
               value={tailscaleTag}
