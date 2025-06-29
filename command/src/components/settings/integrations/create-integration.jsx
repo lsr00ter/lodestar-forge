@@ -95,7 +95,7 @@ export function CreateIntegration() {
               </p>
             )}
             <Select value={integration} onValueChange={setIntegration}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger>
                 <SelectValue placeholder="Select a integration" />
               </SelectTrigger>
               <SelectContent>

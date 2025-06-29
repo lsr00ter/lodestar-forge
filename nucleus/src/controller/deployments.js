@@ -215,10 +215,21 @@ export const createDeployment = async (req, res) => {
   }
 };
 
-export const deleteDeployment = async (req, res) => {
+export const destroyDeployment = async (req, res) => {
   const { deploymentId } = req.params;
   if (!deploymentId) {
     return res.status(400).json({ error: "error 'deploymentId' is required" });
+  }
+
+  const [deployment] = await db
+    .select()
+    .from(deployments)
+    .where(eq(deployments.id, deploymentId));
+
+  if (deployment.status === "destroying" || deployment.status === "destroyed") {
+    return res
+      .status(400)
+      .json({ error: "Deployment is already being destroyed or destroyed" });
   }
 
   try {
@@ -276,6 +287,63 @@ export const deleteDeployment = async (req, res) => {
       }
     }
 
+    const [destroyed] = await db
+      .update(deployments)
+      .set({ status: "destroyed" })
+      .where(eq(deployments.id, deploymentId))
+      .returning();
+
+    quickCreateLog({
+      message: `User ${res.locals.user.id} (${res.locals.user.name}) destroyed the deployment ${destroyed.id} (${destroyed.name}).`,
+      projectId: destroyed.projectId,
+      source: "nucleus",
+      status: "info",
+      resource: destroyed.id,
+    });
+  } catch (e) {
+    const [updated] = await db
+      .update(deployments)
+      .set({ status: "failed" })
+      .where(eq(deployments.id, deploymentId))
+      .returning();
+
+    quickCreateLog({
+      message: e.message,
+      projectId: updated.projectId,
+      source: "nucleus",
+      status: "error",
+      resource: updated.id,
+    });
+
+    console.error(e);
+  }
+};
+
+export const deleteDeployment = async (req, res) => {
+  const { deploymentId } = req.params;
+  if (!deploymentId) {
+    return res.status(400).json({ error: "error 'deploymentId' is required" });
+  }
+
+  const [deployment] = await db
+    .select()
+    .from(deployments)
+    .where(eq(deployments.id, deploymentId))
+    .limit(1);
+
+  if (!deployment) {
+    return res.status(404).json({ error: "deployment not found" });
+  }
+
+  if (deployment.status !== "destroyed") {
+    return res
+      .status(400)
+      .json({ error: "deployment must be destroyed first." });
+  }
+
+  res.sendStatus(200);
+
+  try {
     if (fs.existsSync(path.join(DEPLOYMENTS_DIR, deploymentId))) {
       fs.rmSync(path.join(DEPLOYMENTS_DIR, deploymentId), {
         recursive: true,
@@ -829,11 +897,26 @@ export const configureDeployment = async (req, res) => {
       }`,
     ]);
 
+    const [ansibleOutput] = await db
+      .select()
+      .from(settings)
+      .where(eq(settings.name, "ansibleOutput"));
+
+    const ansibleArgs = [
+      "-i",
+      "inventory.yml",
+      "--private-key=../private-key.pem",
+      "main.yml",
+    ];
+    if (ansibleOutput?.value === "verbose") {
+      ansibleArgs.push("-vvv");
+    }
+
     await runCommand(
       deploymentId,
       deploymentData.projectId,
       "ansible-playbook",
-      ["-i", "inventory.yml", "--private-key=../private-key.pem", "main.yml"],
+      ansibleArgs,
       {
         PATH: `${DEFAULT_PATH}:/root/.local/bin`,
         ANSIBLE_HOST_KEY_CHECKING: "False",

@@ -69,7 +69,7 @@ export const DeploymentSettings = ({ settingsData }) => {
               </p>
             </div>
             <Select value={ansibleOutput} onValueChange={setAnsibleOutput}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger>
                 <SelectValue placeholder="Select" />
               </SelectTrigger>
               <SelectContent>

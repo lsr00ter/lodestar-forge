@@ -109,7 +109,7 @@ export function CreateUser() {
           <div className="grid gap-2">
             <Label htmlFor="role">Role*</Label>
             <Select value={role} onValueChange={setRole}>
-              <SelectTrigger className="w-full">
+              <SelectTrigger>
                 <SelectValue placeholder="Select a role" />
               </SelectTrigger>
               <SelectContent>
