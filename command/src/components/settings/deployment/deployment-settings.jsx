@@ -64,8 +64,9 @@ export const DeploymentSettings = ({ settingsData }) => {
             <div className="grid gap-1">
               <Label>Ansible Output</Label>
               <p className="text-xs text-muted-foreground">
-                The default user-data script will install Tailscale. However,
-                you can add extra code here.
+                Change the verbosity of Ansible output. Verbose output provides
+                more detailed information about the Ansible execution process.
+                Useful for debugging and troubleshooting.
               </p>
             </div>
             <Select value={ansibleOutput} onValueChange={setAnsibleOutput}>
