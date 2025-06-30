@@ -156,11 +156,11 @@ Below is an outline of the planned features for the upcoming major releases of L
 - [x] Modify existing file templates
 
 **Version 0.2.0**
-- [ ] Deployments "destroyed" state
+- [x] Deployments "destroyed" state
+- [x] Ansible debugging options
 - [ ] Integration "test connection" button
 - [ ] Improved configurations logic
 - [ ] Additional templates
-- [ ] Ansible debugging options
 
 **Version 0.3.0**
 - [ ] Template dependencies
