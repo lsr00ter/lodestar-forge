@@ -26,6 +26,8 @@ import { templates } from "../db/schema/templates.js";
 import { files } from "../db/schema/files.js";
 import { settings } from "../db/schema/settings.js";
 
+import { tailscaleUserData } from "../templates/system/general/tailscale_user_data.sh.js";
+
 // Constants
 const DEFAULT_PATH =
   "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
@@ -81,6 +83,67 @@ const runCommand = (deploymentId, projectId, command, args, env, cwd) => {
       code === 0 ? resolve(true) : reject(false);
     });
   });
+};
+
+// Function to append Terraform resource names with a unique identifier
+const updateTerraformResourceNames = (terraform, id) => {
+  return terraform.replace(
+    /resource\s+"([^"]+)"\s+"([^"]+)"/g,
+    (_, resourceType, resourceName) => {
+      const newResourceName = `${resourceName}_${id}`;
+      return `resource "${resourceType}" "${newResourceName}"`;
+    },
+  );
+};
+
+// Function to inject SSH key into Terraform resource
+const injectSshKey = (resourceType, resource, region = "") => {
+  const lines = resource.split("\n");
+
+  if (resourceType === "aws_instance") {
+    lines.splice(
+      lines.length - 1,
+      0,
+      "\n  key_name = aws_key_pair.key_pair.key_name\n",
+    );
+  } else if (resourceType === "digitalocean_droplet") {
+    lines.splice(
+      lines.length - 1,
+      0,
+      "\n  ssh_keys = [digitalocean_ssh_key.key_pair.id]\n",
+      `\n  region = "${region}"\n`,
+    );
+  }
+  return lines.join("\n");
+};
+
+// Function to inject user data script into Terraform resource
+const injectUserDataScript = (resource, userDataScript) => {
+  const userDataField = `  user_data = <<-EOF${userDataScript}\n\tEOF\n`;
+  const lines = resource.split("\n");
+  lines.splice(lines.length - 1, 0, userDataField);
+  return lines.join("\n");
+};
+
+// Function to inject custom variables into Terraform resource
+const injectTerraformVariables = (resource, variables) => {
+  return variables.reduce((acc, variable) => {
+    return acc.replaceAll(`$$${variable.name}$$`, variable.value);
+  }, resource);
+};
+
+// Function to parse resources pulled from Terraform file
+const parseTerraformResource = (terraform) => {
+  const regex = /resource\s+"([^"]+)"\s+"([^"]+)"/;
+  const match = terraform.match(regex);
+  return match ? { type: match[1], name: match[2] } : null;
+};
+
+// Function to pull resources from Terraform file
+const extractTerraformResources = (terraform) => {
+  const resourceRegex =
+    /resource\s+"[\w-]+"\s+"[\w-]+"\s+\{(?:[^{}]*|\{[^{}]*\})*\}/g;
+  return terraform.match(resourceRegex) || [];
 };
 
 // Handle configuration variables
@@ -279,6 +342,7 @@ export const destroyDeployment = async (req, res) => {
           terraformDir,
         );
 
+        // Remove ansible directories
         if (
           fs.existsSync(path.join(DEPLOYMENTS_DIR, deploymentId, "ansible"))
         ) {
@@ -300,6 +364,19 @@ export const destroyDeployment = async (req, res) => {
           .from(resources);
 
         infrastructureRows.map(async (infrastructureRow) => {
+          const TERRAFORM_DIR = path.join(
+            DEPLOYMENTS_DIR,
+            deploymentId,
+            "terraform",
+          );
+          if (
+            fs.existsSync(
+              path.join(TERRAFORM_DIR, `${infrastructureRow.id}.tf`),
+            )
+          ) {
+            fs.rmSync(path.join(TERRAFORM_DIR, `${infrastructureRow.id}.tf`));
+          }
+
           await db
             .update(infrastructure)
             .set({
@@ -631,12 +708,13 @@ export const prepareDeployment = async (req, res) => {
 
 export const deployDeployment = async (req, res) => {
   const { deploymentId } = req.params;
-  var isDestroyed = false;
 
+  // No deployment ID provided
   if (!deploymentId) {
     return res.status(400).json({ error: "error 'deploymentId' is required" });
   }
 
+  // Get deployment data using transactions
   const deploymentData = await db.transaction(async (tx) => {
     const [original] = await db
       .select()
@@ -652,49 +730,203 @@ export const deployDeployment = async (req, res) => {
     return { original, updated };
   });
 
+  // No deployment data found
   if (!deploymentData.original) {
     return res.status(404).json({ error: "Deployment not found" });
   }
 
+  // Do not allow - deployment already deploying
   if (deploymentData.original.status === "deploying") {
     return res.status(400).json({ error: "Deployment is already deploying" });
   }
 
-  if (deploymentData.original.status === "destroyed") {
-    isDestroyed = true;
-  }
+  // Change deployment status to building
+  const infrastructureToDeploy = await db.transaction(async (tx) => {
+    const original = await db
+      .select()
+      .from(infrastructure)
+      .where(
+        and(
+          inArray(infrastructure.status, ["pending", "failed", "destroyed"]),
+          eq(infrastructure.deploymentId, deploymentId),
+        ),
+      );
 
-  await db
-    .update(infrastructure)
-    .set({ status: "building" })
-    .where(
-      and(
-        inArray(infrastructure.status, ["pending", "failed"]),
-        eq(infrastructure.deploymentId, deploymentId),
-      ),
-    );
+    const updated = await db
+      .update(infrastructure)
+      .set({ status: "building" })
+      .where(
+        and(
+          inArray(infrastructure.status, ["pending", "failed", "destroyed"]),
+          eq(infrastructure.deploymentId, deploymentId),
+        ),
+      )
+      .returning();
+
+    return { original, updated };
+  });
 
   res.sendStatus(200);
 
+  // Define directories
+  const deploymentDir = path.join(DEPLOYMENTS_DIR, deploymentId);
+  const terraformDir = path.join(deploymentDir, "terraform");
+
+  // Get the settings for userdata and tailscale tag
+  const settingsData = await db.select().from(settings);
+
+  const tagSetting = settingsData.find(
+    (setting) => setting.name === "tailscaleTag",
+  );
+  const userDataSetting = settingsData.find(
+    (setting) => setting.name === "userData",
+  );
+
+  // Get tailscale key
+  const [tailscaleKey] = await db
+    .select()
+    .from(integrations)
+    .where(eq(integrations.id, deploymentData.original.tailscaleId));
+
+  // Get all infrastructure templates
+  const templatesData = await db
+    .select()
+    .from(templates)
+    .where(eq(templates.type, "infrastructure"));
+
+  // For each peice of infrastructure to deploy
+  infrastructureToDeploy.original.forEach(async (infrastructureRow) => {
+    let isDestroyed = infrastructureRow.status === "destroyed";
+    console.log(infrastructureRow);
+    const template = templatesData.find(
+      (template) => template.id === infrastructureRow.template.id,
+    );
+
+    if (isDestroyed) {
+      await db
+        .delete(resources)
+        .where(eq(resources.infrastructureId, infrastructureRow.id));
+    }
+
+    // Extract terraform resources from template
+    const resourceArray = extractTerraformResources(template.value);
+    let finalContent = "";
+    const updatedResourceMappings = [];
+
+    await Promise.all(
+      resourceArray.map(async (resource) => {
+        // For each resource, generate a UUID
+        const resourceUUID = crypto.randomUUID();
+        const oldParsedResource = parseTerraformResource(resource);
+
+        // Inject custom template variables
+        let updatedResource = injectTerraformVariables(
+          resource,
+          infrastructureRow.template.variables,
+        );
+        updatedResource = updateTerraformResourceNames(
+          updatedResource,
+          resourceUUID,
+        );
+
+        if (
+          oldParsedResource.type === "aws_instance" ||
+          oldParsedResource.type === "digitalocean_droplet"
+        ) {
+          updatedResource = injectSshKey(
+            oldParsedResource.type,
+            updatedResource,
+            deploymentData.original.region,
+          );
+
+          const tailscaleResult = await fetch(
+            "https://api.tailscale.com/api/v2/tailnet/-/keys?all=true",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${tailscaleKey.secretKey}`,
+              },
+              body: JSON.stringify({
+                capabilities: {
+                  devices: {
+                    create: {
+                      reusable: false,
+                      ephemeral: true,
+                      preauthorized: true,
+                      tags: tagSetting?.value
+                        ? [`tag:${tagSetting.value}`]
+                        : [],
+                    },
+                  },
+                },
+                expirySeconds: 86400,
+              }),
+            },
+          );
+
+          const newKey = await tailscaleResult.json();
+
+          const userDataScript = tailscaleUserData({
+            authKey: newKey.key,
+            resourceId: infrastructureRow.id,
+            resourceName: infrastructureRow.name,
+            custom: userDataSetting?.value ? userDataSetting.value : "",
+          });
+
+          updatedResource = injectUserDataScript(
+            updatedResource,
+            userDataScript,
+          );
+        }
+
+        finalContent = finalContent.concat(updatedResource + "\n\n");
+
+        const newParsedResource = parseTerraformResource(updatedResource);
+        updatedResourceMappings.push({
+          old: `${oldParsedResource?.type}.${oldParsedResource?.name}`,
+          new: `${newParsedResource?.type}.${newParsedResource?.name}`,
+        });
+
+        await db.insert(resources).values({
+          id: resourceUUID,
+          infrastructureId: infrastructureRow.id,
+          resourceType: newParsedResource.type,
+          resourceName: newParsedResource.name,
+          status: "pending",
+        });
+      }),
+    );
+
+    updatedResourceMappings.forEach((mapping) => {
+      finalContent = finalContent.replace(mapping.old, mapping.new);
+    });
+
+    fs.writeFileSync(
+      path.join(terraformDir, `${infrastructureRow.id}.tf`),
+      finalContent,
+    );
+  });
+
+  // Get the platform used for this deployment
   const [platform] = await db
     .select()
     .from(integrations)
     .where(eq(integrations.id, deploymentData.original.platformId));
 
+  // Terraform environment variables
   const envVars = {
     TF_CLI_ARGS: "-no-color",
     PATH: DEFAULT_PATH,
   };
 
+  // Set remaining environment variables based on the platform
   if (platform.platform === "aws") {
     envVars.AWS_ACCESS_KEY_ID = String(platform.keyId);
     envVars.AWS_SECRET_ACCESS_KEY = String(platform.secretKey);
   } else if (platform.platform === "digitalocean") {
     envVars.DIGITALOCEAN_TOKEN = String(platform.secretKey);
   }
-
-  const deploymentDir = path.join(DEPLOYMENTS_DIR, deploymentId);
-  const terraformDir = path.join(deploymentDir, "terraform");
 
   try {
     // Format terraform files to prevent issues
@@ -707,6 +939,7 @@ export const deployDeployment = async (req, res) => {
       terraformDir,
     );
 
+    // Apply changes to infrastructure
     await runCommand(
       deploymentId,
       deploymentData.original.projectId,
@@ -716,47 +949,36 @@ export const deployDeployment = async (req, res) => {
       terraformDir,
     );
 
+    // Get the terraform state file
     const state = JSON.parse(
       await readFile(path.join(terraformDir, "terraform.tfstate"), "utf8"),
     );
 
     const stateResources = state.resources;
-    let infrastructureRows = [];
 
-    if (isDestroyed) {
-      infrastructureRows = await db
-        .select()
-        .from(infrastructure)
-        .where(eq(infrastructure.deploymentId, deploymentId));
-    } else {
-      infrastructureRows = await db
-        .select()
-        .from(infrastructure)
-        .where(
-          and(
-            eq(infrastructure.deploymentId, deploymentId),
-            ne(infrastructure.status, "default"),
-          ),
-        );
-    }
-
-    for (const infrastructureRow of infrastructureRows) {
+    // For each piece of infrastructure
+    for (const infrastructureRow of infrastructureToDeploy.original) {
       try {
+        // Get resources for the current infrastructure
         const resourceRows = await db
           .select()
           .from(resources)
           .where(eq(resources.infrastructureId, infrastructureRow.id));
 
         let username = "";
+
         for (const resourceRow of resourceRows) {
           const stateResource = stateResources.find(
             (r) => r.name === resourceRow.resourceName,
           );
 
+          // Attempt to retrieve the username so Ansible can use it.
+
           const amiId = stateResource.instances[0].attributes?.ami;
           const imageName = stateResource.instances[0].attributes?.image;
 
           if (amiId) {
+            // If the instance has an AMI, describe the image
             const result = execSync(
               `aws ec2 describe-images --image-ids ${amiId} --query "Images[0].{Name:Name,Description:Description}" --output json`,
               {
@@ -774,6 +996,7 @@ export const deployDeployment = async (req, res) => {
             const amiName = ami.Name.toLowerCase();
             const amiDescription = ami.Description.toLowerCase();
 
+            // Attempt to determine the username based on the AMI name or description
             if (
               amiName.includes("ubuntu") ||
               amiDescription.includes("ubuntu")
@@ -793,6 +1016,7 @@ export const deployDeployment = async (req, res) => {
             username = "root";
           }
 
+          // Update resources with networking information
           await db
             .update(resources)
             .set({
@@ -810,6 +1034,7 @@ export const deployDeployment = async (req, res) => {
             .where(eq(resources.id, resourceRow.id));
         }
 
+        // Change infrastructure status and username
         await db
           .update(infrastructure)
           .set({
@@ -819,6 +1044,7 @@ export const deployDeployment = async (req, res) => {
           })
           .where(eq(infrastructure.id, infrastructureRow.id));
       } catch (e) {
+        // If something fails, change the infrastructure status to failed
         console.error(e);
         await db
           .update(infrastructure)
@@ -827,11 +1053,14 @@ export const deployDeployment = async (req, res) => {
       }
     }
 
+    // Finally change the status of the deployment
     await db
       .update(deployments)
       .set({ status: "ready-to-configure" })
       .where(eq(deployments.id, deploymentId));
-  } catch {
+  } catch (e) {
+    // If something fails, change the deployment status to failed
+    console.error(e);
     await db
       .update(deployments)
       .set({ status: "failed" })

@@ -21,12 +21,7 @@ export const infrastructure = pgTable("infrastructure", {
     onDelete: "cascade",
   }),
   name: text("name").notNull(),
-  infrastructureTemplateId: text("infrastructureTemplateId").references(
-    () => templates.id,
-    {
-      onDelete: "no action",
-    },
-  ),
+  template: json("template"),
   configurations: json("configurations").array(),
   deployedConfigurations: json("deployedConfigurations").array(),
   status: infrastructureStatusEnum("status").notNull().default("pending"),

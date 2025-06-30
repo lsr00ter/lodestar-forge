@@ -258,7 +258,7 @@ export function StatusCard({ className, deployment, infrastructure }) {
 
                       {!hasConfigurations || !hasTailscaleIps ? (
                         <Tooltip delayDuration={25}>
-                          <TooltipTrigger>
+                          <TooltipTrigger asChild>
                             <Button size="sm" disabled>
                               Configure
                             </Button>

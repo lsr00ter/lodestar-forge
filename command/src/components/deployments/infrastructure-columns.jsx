@@ -86,7 +86,13 @@ export const columns = () => [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Resources" />
     ),
-    cell: ({ row }) => <p>{row.original.resources.length}</p>,
+    cell: ({ row }) => (
+      <p>
+        {row.original.resources.length > 0
+          ? row.original.resources.length
+          : "N/A"}
+      </p>
+    ),
   },
   {
     id: "privateIp",
