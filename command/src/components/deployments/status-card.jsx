@@ -206,7 +206,6 @@ export function StatusCard({ className, deployment, infrastructure }) {
 
               switch (deployment?.status) {
                 case "ready-to-prepare":
-                case "destroyed":
                   return (
                     <Button
                       onClick={() => prepareDeployment(deployment?.id)}
@@ -292,6 +291,16 @@ export function StatusCard({ className, deployment, infrastructure }) {
                         Configure
                       </Button>
                     </>
+                  );
+                case "destroyed":
+                  return (
+                    <Button
+                      onClick={() => deployDeployment(deployment?.id)}
+                      ß
+                      size="sm"
+                    >
+                      Deploy
+                    </Button>
                   );
               }
             })()}

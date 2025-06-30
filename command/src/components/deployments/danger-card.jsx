@@ -101,7 +101,12 @@ export function DangerCard({ className, deployment }) {
                   <Button
                     size="sm"
                     variant={"secondary"}
-                    disabled={deployment.status === "destroyed"}
+                    disabled={[
+                      "destroyed",
+                      "preparing",
+                      "deploying",
+                      "configuring",
+                    ].includes(deployment.status)}
                   >
                     Destroy Deployment
                   </Button>

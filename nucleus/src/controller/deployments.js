@@ -631,6 +631,7 @@ export const prepareDeployment = async (req, res) => {
 
 export const deployDeployment = async (req, res) => {
   const { deploymentId } = req.params;
+  var isDestroyed = false;
 
   if (!deploymentId) {
     return res.status(400).json({ error: "error 'deploymentId' is required" });
@@ -657,6 +658,10 @@ export const deployDeployment = async (req, res) => {
 
   if (deploymentData.original.status === "deploying") {
     return res.status(400).json({ error: "Deployment is already deploying" });
+  }
+
+  if (deploymentData.original.status === "destroyed") {
+    isDestroyed = true;
   }
 
   await db
@@ -716,16 +721,24 @@ export const deployDeployment = async (req, res) => {
     );
 
     const stateResources = state.resources;
+    let infrastructureRows = [];
 
-    const infrastructureRows = await db
-      .select()
-      .from(infrastructure)
-      .where(
-        and(
-          eq(infrastructure.deploymentId, deploymentId),
-          ne(infrastructure.status, "default"),
-        ),
-      );
+    if (isDestroyed) {
+      infrastructureRows = await db
+        .select()
+        .from(infrastructure)
+        .where(eq(infrastructure.deploymentId, deploymentId));
+    } else {
+      infrastructureRows = await db
+        .select()
+        .from(infrastructure)
+        .where(
+          and(
+            eq(infrastructure.deploymentId, deploymentId),
+            ne(infrastructure.status, "default"),
+          ),
+        );
+    }
 
     for (const infrastructureRow of infrastructureRows) {
       try {
@@ -799,7 +812,11 @@ export const deployDeployment = async (req, res) => {
 
         await db
           .update(infrastructure)
-          .set({ status: "running", username })
+          .set({
+            status:
+              infrastructureRow.status === "default" ? "default" : "running",
+            username,
+          })
           .where(eq(infrastructure.id, infrastructureRow.id));
       } catch (e) {
         console.error(e);

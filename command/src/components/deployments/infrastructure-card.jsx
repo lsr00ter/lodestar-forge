@@ -148,16 +148,19 @@ export function InfrastructureCard({
             }}
           >
             <DialogTrigger asChild>
-              <div className="flex items-center" style={{ marginTop: 0 }}>
-                <Button
-                  size="sm"
-                  disabled={
-                    status === "ready-to-prepare" || status === "preparing"
-                  }
-                >
-                  Add
-                </Button>
-              </div>
+              <Button
+                size="sm"
+                disabled={
+                  status === "ready-to-prepare" ||
+                  status === "preparing" ||
+                  status === "destroyed" ||
+                  status === "destroying" ||
+                  status === "deploying" ||
+                  status === "configuring"
+                }
+              >
+                Add
+              </Button>
             </DialogTrigger>
             {showVariables ? (
               <DialogContent>
