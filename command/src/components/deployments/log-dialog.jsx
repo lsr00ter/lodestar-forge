@@ -25,7 +25,7 @@ export function LogDialog({ log }) {
           <Logs />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl flex flex-col">
+      <DialogContent className="max-w-3xl! flex flex-col">
         <DialogHeader>
           <DialogTitle>Deployment Log</DialogTitle>
           <DialogDescription>
