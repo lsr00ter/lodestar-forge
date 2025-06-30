@@ -278,6 +278,60 @@ export const destroyDeployment = async (req, res) => {
           envVars,
           terraformDir,
         );
+
+        if (
+          fs.existsSync(path.join(DEPLOYMENTS_DIR, deploymentId, "ansible"))
+        ) {
+          fs.rmSync(path.join(DEPLOYMENTS_DIR, deploymentId, "ansible"), {
+            recursive: true,
+          });
+        }
+
+        const infrastructureRows = await db
+          .select({ id: infrastructure.id })
+          .from(infrastructure)
+          .where(eq(infrastructure.deploymentId, deploymentId));
+
+        const allResourceRows = await db
+          .select({
+            id: resources.id,
+            infrastructureId: resources.infrastructureId,
+          })
+          .from(resources);
+
+        infrastructureRows.map(async (infrastructureRow) => {
+          await db
+            .update(infrastructure)
+            .set({
+              status: "destroyed",
+              configurations: [],
+              deployedConfigurations: [],
+            })
+            .where(
+              and(
+                eq(infrastructure.id, infrastructureRow.id),
+                ne(infrastructure.status, "default"),
+              ),
+            );
+
+          const selectResources = allResourceRows.filter(
+            (resource) => resource.infrastructureId === infrastructureRow.id,
+          );
+
+          await Promise.all(
+            selectResources.map(async (resource) => {
+              await db
+                .update(resources)
+                .set({
+                  providerId: "",
+                  publicIp: "",
+                  privateIp: "",
+                  tailscaleIp: "",
+                })
+                .where(eq(resources.id, resource.id));
+            }),
+          );
+        });
       } catch (e) {
         console.error(e);
         await db
@@ -383,7 +437,6 @@ export const deleteDeployment = async (req, res) => {
 
 export const prepareDeployment = async (req, res) => {
   const { deploymentId } = req.params;
-  const infrastructureId = String(crypto.randomUUID());
 
   if (!deploymentId) {
     return res.status(400).json({ error: "error 'deploymentId' is required" });
@@ -519,14 +572,34 @@ export const prepareDeployment = async (req, res) => {
 
     await db.update(deployments).set({ status: "ready-to-deploy" });
 
-    await db.insert(infrastructure).values({
-      id: infrastructureId,
-      deploymentId,
-      name: "Forge - Default Infrastructure",
-      description:
-        "The default deployment network and resources created by Lodestar Forge.",
-      status: "default",
-    });
+    const [defaultInfrastructure] = await db
+      .select({ id: infrastructure.id })
+      .from(infrastructure)
+      .where(
+        and(
+          eq(infrastructure.deploymentId, deploymentId),
+          eq(infrastructure.status, "default"),
+        ),
+      )
+      .limit(1);
+
+    let infrastructureId = String(crypto.randomUUID());
+
+    if (defaultInfrastructure) {
+      infrastructureId = defaultInfrastructure.id;
+      await db
+        .delete(resources)
+        .where(eq(resources.infrastructureId, infrastructureId));
+    } else {
+      await db.insert(infrastructure).values({
+        id: infrastructureId,
+        deploymentId,
+        name: "Forge - Default Infrastructure",
+        description:
+          "The default deployment network and resources created by Lodestar Forge.",
+        status: "default",
+      });
+    }
 
     const state = JSON.parse(
       await readFile(path.join(terraformDir, "terraform.tfstate"), "utf8"),
@@ -908,6 +981,7 @@ export const configureDeployment = async (req, res) => {
       "--private-key=../private-key.pem",
       "main.yml",
     ];
+
     if (ansibleOutput?.value === "verbose") {
       ansibleArgs.push("-vvv");
     }
