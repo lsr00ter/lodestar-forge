@@ -160,14 +160,15 @@ Below is an outline of the planned features for the upcoming major releases of L
 - [x] Ansible debugging options
 - [ ] Integration "test connection" button
 - [ ] Improved configurations logic
-- [ ] Additional templates
 
 **Version 0.3.0**
+- [ ] Template variable regex support
 - [ ] Template dependencies
 - [ ] Deployment sharing/import/export
 
 **Version 0.4.0**
 - [ ] Ansible galaxy support
+- [ ] Additional templates
 
 **Future Releases**
 - [ ] Additional cloud providers
