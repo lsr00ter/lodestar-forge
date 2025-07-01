@@ -140,6 +140,16 @@ export function CreateIntegration() {
         </div>
         <DialogFooter>
           <Button
+            disabled={
+              integration === "" ||
+              secretKey === "" ||
+              (integration === "aws" && keyId == "")
+            }
+            variant={"secondary"}
+          >
+            Test
+          </Button>
+          <Button
             type="button"
             disabled={
               name == "" ||

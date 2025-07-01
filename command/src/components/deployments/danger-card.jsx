@@ -23,9 +23,12 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { Input } from "../ui/input";
+import { useState } from "react";
 
 export function DangerCard({ className, deployment }) {
-  console.log(deployment);
+  const [destroyConfirm, setDestroyConfirm] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState("");
   return (
     <Card className={cn(className)}>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -72,10 +75,21 @@ export function DangerCard({ className, deployment }) {
                     </AlertDialogTitle>
                     <AlertDialogDescription>
                       Deleting a deployment will permanently remove it and all
-                      associated infrastructure from Forge.
+                      associated infrastructure from Forge. This action cannot
+                      be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
-                  {/* TODO: Please type the name of the deployment to continue... */}
+                  <div className="grid gap-2">
+                    <p className="text-sm">
+                      Please type "{deployment.name}" to confirm.
+                    </p>
+                    <Input
+                      id="name"
+                      value={deleteConfirm}
+                      onChange={(e) => setDeleteConfirm(e.target.value)}
+                      placeholder={deployment.name}
+                    />
+                  </div>
                   <AlertDialogFooter>
                     <AlertDialogCancel asChild>
                       <Button className="h-9" variant="outline">
@@ -86,6 +100,7 @@ export function DangerCard({ className, deployment }) {
                       <Button
                         onClick={() => deleteDeployment(deployment.id)}
                         className="h-9"
+                        disabled={deleteConfirm !== deployment.name}
                       >
                         Delete
                       </Button>
@@ -118,11 +133,22 @@ export function DangerCard({ className, deployment }) {
                     </AlertDialogTitle>
                     <AlertDialogDescription>
                       Destroying a deployment will permanently delete it from
-                      the associated cloud provider. Infrastructure can be
-                      recreated.
+                      the associated cloud provider and remove all
+                      configurations. Infrastructure can be recreated, however,
+                      configurations must be reapplied.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
-                  {/* TODO: Please type the name of the deployment to continue... */}
+                  <div className="grid gap-2">
+                    <p className="text-sm">
+                      Please type "{deployment.name}" to confirm.
+                    </p>
+                    <Input
+                      id="name"
+                      value={destroyConfirm}
+                      onChange={(e) => setDestroyConfirm(e.target.value)}
+                      placeholder={deployment.name}
+                    />
+                  </div>
                   <AlertDialogFooter>
                     <AlertDialogCancel asChild>
                       <Button className="h-9" variant="outline">
@@ -131,6 +157,7 @@ export function DangerCard({ className, deployment }) {
                     </AlertDialogCancel>
                     <AlertDialogAction asChild>
                       <Button
+                        disabled={destroyConfirm !== deployment.name}
                         onClick={() => destroyDeployment(deployment.id)}
                         className="h-9"
                       >
