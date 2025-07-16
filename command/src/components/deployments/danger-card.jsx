@@ -81,7 +81,7 @@ export function DangerCard({ className, deployment }) {
                   </AlertDialogHeader>
                   <div className="grid gap-2">
                     <p className="text-sm">
-                      Please type "{deployment.name}" to confirm.
+                      Please type &quot;{deployment.name}&quot; to confirm.
                     </p>
                     <Input
                       id="name"
@@ -140,7 +140,7 @@ export function DangerCard({ className, deployment }) {
                   </AlertDialogHeader>
                   <div className="grid gap-2">
                     <p className="text-sm">
-                      Please type "{deployment.name}" to confirm.
+                      Please type &quot;{deployment.name}&quot; to confirm.
                     </p>
                     <Input
                       id="name"
