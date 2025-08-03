@@ -63,12 +63,6 @@ export default async function Infrastructure(props) {
             resource.resourceType === "aws_instance" ||
             resource.resourceType === "digitalocean_droplet",
     );
-    const subnets = resources.filter(
-        (resource) => resource.resourceType === "aws_subnet",
-    );
-    const vpcs = resources.filter(
-        (resource) => resource.resourceType === "aws_vpc",
-    );
 
     return (
         <div className="p-6 h-full flex flex-col overflow-y-hidden gap-6">
@@ -117,7 +111,8 @@ export default async function Infrastructure(props) {
                             infrastructure={infrastructureData}
                             className="col-span-1 row-span-1"
                         />
-                        {infrastructureData.status !== "default" ? (
+                        {hosts.length > 0 &&
+                        infrastructureData.status !== "default" ? (
                             <ConfigurationCard
                                 infrastructureId={infrastructureId}
                                 deploymentId={deploymentId}
