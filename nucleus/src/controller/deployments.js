@@ -19,6 +19,7 @@ import { doKey } from "../templates/system/digitalocean/key.tf.js";
 // import database schemas
 import { integrations } from "../db/schema/integrations.js";
 import { deployments } from "../db/schema/deployments.js";
+import { domains } from "../db/schema/domains.js";
 import { sshKeys } from "../db/schema/sshKeys.js";
 import { infrastructure } from "../db/schema/infrastructure.js";
 import { resources } from "../db/schema/resources.js";
@@ -1098,12 +1099,22 @@ export const deployDeployment = async (req, res) => {
                         username = "root";
                     }
 
+                    const domain =
+                        stateResource.instances[0].attributes.domain_name;
+                    if (domain) {
+                        await db.insert(domains).values({
+                            domain,
+                            projectId: deploymentData.original.projectId,
+                        });
+                    }
+
                     // Update resources with networking information
                     await db
                         .update(resources)
                         .set({
                             providerId:
                                 stateResource.instances[0].attributes.id,
+                            domain,
                             privateIp:
                                 stateResource.instances[0].attributes
                                     .private_ip ||

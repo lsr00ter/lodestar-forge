@@ -18,7 +18,7 @@ export const domains = pgTable("domains", {
     projectId: text("projectId").references(() => projects.id, {
         onDelete: "cascade",
     }),
-    domain: text("domain").notNull(),
+    domain: text("domain").notNull().unique(),
     category: text("category").default("unknown"),
     // State is used to monitor whether or not the domain has been compromised & its health (e.g. enumerated by a SOC)
     state: domainStateEnum("state").notNull().default("pending-analysis"),
