@@ -40,9 +40,12 @@ export function ResourcesCard({ className, infrastructure }) {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Identifier</TableHead>
-                                <TableHead>Forge ID</TableHead>
-                                <TableHead>Provider ID</TableHead>
+                                <TableHead>Resource Name</TableHead>
+                                <TableHead>Resource Type</TableHead>
+                                <TableHead>Domain</TableHead>
+                                <TableHead>Public IP</TableHead>
+                                <TableHead>Private IP</TableHead>
+                                <TableHead>Tailscale IP</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -56,19 +59,32 @@ export function ResourcesCard({ className, infrastructure }) {
 
                                 return (
                                     <TableRow key={resource.id}>
+                                        <TableCell>{resourceName}</TableCell>
                                         <TableCell>
                                             {resource?.resourceType
-                                                ? `${resource.resourceType}.${resourceName}`
+                                                ? `${resource.resourceType}`
                                                 : "Pending"}
                                         </TableCell>
                                         <TableCell>
-                                            {resource?.id ? resource.id : "-"}
-                                        </TableCell>
-                                        <TableCell>
-                                            {resource?.providerId
-                                                ? resource.providerId
+                                            {resource?.domain
+                                                ? resource.domain
                                                 : "-"}
                                         </TableCell>
+                                        <TableCell>
+                                            {resource?.publicIp
+                                                ? resource.publicIp
+                                                : "-"}
+                                        </TableCell>
+                                        <TableCell>
+                                            {resource?.privateIp
+                                                ? resource.privateIp
+                                                : "-"}
+                                        </TableCell>
+                                        <TableCell>
+                                            {resource?.tailscaleIp
+                                                ? resource.tailscaleIp
+                                                : "-"}
+                                        </TableCell>{" "}
                                     </TableRow>
                                 );
                             })}
