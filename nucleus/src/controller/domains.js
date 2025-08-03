@@ -1,9 +1,11 @@
 import { db } from "../db/index.js";
 import { domains } from "../db/schema/domains.js";
+import { resources } from "../db/schema/resources.js";
+import { infrastructure } from "../db/schema/infrastructure.js";
 import { eq } from "drizzle-orm";
 
 export const allDomains = async (req, res) => {
-    const { projectId } = req.query;
+    const { projectId, includeInfrastructure } = req.query;
 
     var rows = [];
 
@@ -14,6 +16,35 @@ export const allDomains = async (req, res) => {
             .where(eq(domains.projectId, projectId));
     } else {
         rows = await db.select().from(domains);
+    }
+
+    if (includeInfrastructure === "true") {
+        const allResources = await db.select().from(resources);
+        const allInfrastructure = await db
+            .select({
+                id: infrastructure.id,
+                deploymentId: infrastructure.deploymentId,
+                name: infrastructure.name,
+                status: infrastructure.status,
+            })
+            .from(infrastructure);
+
+        rows.forEach((row) => {
+            var associatedInfrastructureIds = allResources
+                .filter((resource) => resource.domain === row.domain)
+                .map((resource) => resource.infrastructureId);
+
+            associatedInfrastructureIds = [
+                ...new Set(associatedInfrastructureIds),
+            ];
+
+            var associatedInfrastructure = allInfrastructure.filter(
+                (infrastructure) =>
+                    associatedInfrastructureIds.includes(infrastructure.id),
+            );
+
+            row.infrastructure = associatedInfrastructure;
+        });
     }
 
     return res.status(200).json(rows);
