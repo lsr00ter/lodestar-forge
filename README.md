@@ -149,24 +149,27 @@ docker compose -f docker-compose.dev.yml up
 ## Roadmap
 Below is an outline of the planned features for the upcoming major releases of Lodestar Forge.
 
-**Version 0.1.0**
+**Version 0.1.x**
 - [x] Digital Ocean support
 - [x] Landing page
 - [x] Stability improvements
 - [x] Modify existing file templates
 
-**Version 0.2.0**
+**Version 0.2.x**
 - [x] Deployments "destroyed" state
 - [x] Ansible debugging options
+- [x] Improved domains functionality
 - [ ] Integration "test connection" button
-- [ ] Improved configurations logic
+- [ ] Working user account roles
+- [ ] Appearance settings
+- [ ] Quick install script and one-liner
 
-**Version 0.3.0**
+**Version 0.3.x**
 - [ ] Template variable regex support
 - [ ] Template dependencies
 - [ ] Deployment sharing/import/export
 
-**Version 0.4.0**
+**Version 0.4.x**
 - [ ] Ansible galaxy support
 - [ ] Additional templates
 
