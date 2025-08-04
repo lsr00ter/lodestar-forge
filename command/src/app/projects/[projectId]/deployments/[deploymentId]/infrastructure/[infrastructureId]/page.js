@@ -11,7 +11,6 @@ import { redirect } from "next/navigation";
 import { DetailsCard } from "@/components/infrastructure/details-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { apiFetch } from "@/lib/utils";
-import { DangerCard } from "@/components/deployments/danger-card";
 import { NetworkCard } from "@/components/infrastructure/network-card";
 import { ResourcesCard } from "@/components/infrastructure/resources-card";
 import { ConfigurationCard } from "@/components/infrastructure/configuration-card";
@@ -56,9 +55,7 @@ export default async function Infrastructure(props) {
     const templates = await apiFetch(`/templates`);
     const files = await apiFetch(`/files`);
 
-    const resources = allInfrastructure.map((item) => item.resources).flat();
-
-    const hosts = resources.filter(
+    const hosts = infrastructureData.resources.filter(
         (resource) =>
             resource.resourceType === "aws_instance" ||
             resource.resourceType === "digitalocean_droplet",
