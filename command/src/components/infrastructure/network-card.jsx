@@ -11,11 +11,13 @@ import {
 import { Label } from "../ui/label";
 
 export function NetworkCard({ className, infrastructure }) {
+    var domains = infrastructure.resources.map((r) => r.domain);
     var privateIps = infrastructure.resources.map((r) => r.privateIp);
     var publicIps = infrastructure.resources.map((r) => r.publicIp);
     var tailscaleIps = infrastructure.resources.map((r) => r.tailscaleIp);
 
     // Remove duplicates and filter out empty strings
+    domains = [...new Set(domains)].filter((n) => n);
     privateIps = [...new Set(privateIps)].filter((n) => n);
     publicIps = [...new Set(publicIps)].filter((n) => n);
     tailscaleIps = [...new Set(tailscaleIps)].filter((n) => n);
@@ -24,7 +26,7 @@ export function NetworkCard({ className, infrastructure }) {
         <Card className={cn(className)}>
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
-                    <CardTitle>Networking</CardTitle>
+                    <CardTitle>Networking Overview</CardTitle>
                     <CardDescription className="text-xs text-muted-foreground mt-1.5">
                         Networking information for this infrastructure.
                     </CardDescription>
@@ -36,6 +38,19 @@ export function NetworkCard({ className, infrastructure }) {
             </CardHeader>
             <CardContent>
                 <div className="grid gap-4">
+                    <div className="grid gap-2">
+                        {domains.length > 1 ? (
+                            <>
+                                <Label>Domains</Label>
+                                <p className="text-sm">{domains.join(", ")}</p>
+                            </>
+                        ) : (
+                            <>
+                                <Label>Domain</Label>
+                                <p className="text-sm">{domains[0] || "N/A"}</p>
+                            </>
+                        )}
+                    </div>
                     <div className="grid gap-2">
                         {publicIps.length > 1 ? (
                             <>

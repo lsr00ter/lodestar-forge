@@ -1,7 +1,6 @@
 import { pgTable, text, pgEnum, json } from "drizzle-orm/pg-core";
 import crypto from "crypto";
 import { deployments } from "./deployments.js";
-import { templates } from "./templates.js";
 
 export const infrastructureStatusEnum = pgEnum("infrastructureStatus", [
     "pending",
@@ -10,6 +9,7 @@ export const infrastructureStatusEnum = pgEnum("infrastructureStatus", [
     "default",
     "failed",
     "running",
+    "destroyed",
 ]);
 
 export const infrastructure = pgTable("infrastructure", {
@@ -20,12 +20,7 @@ export const infrastructure = pgTable("infrastructure", {
         onDelete: "cascade",
     }),
     name: text("name").notNull(),
-    infrastructureTemplateId: text("infrastructureTemplateId").references(
-        () => templates.id,
-        {
-            onDelete: "no action",
-        },
-    ),
+    template: json("template"),
     configurations: json("configurations").array(),
     deployedConfigurations: json("deployedConfigurations").array(),
     status: infrastructureStatusEnum("status").notNull().default("pending"),

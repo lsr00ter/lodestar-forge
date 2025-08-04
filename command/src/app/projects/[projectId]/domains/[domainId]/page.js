@@ -7,7 +7,6 @@ import {
     BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 
-import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { DetailsCard } from "@/components/domains/details-card";
 import { HealthCard } from "@/components/domains/health-card";
@@ -26,7 +25,9 @@ export default async function Domain(props) {
     let domainsData,
         dnsRecordsData = [];
 
-    const allDomains = await apiFetch(`/domains?projectId=${projectId}`);
+    const allDomains = await apiFetch(
+        `/domains?projectId=${projectId}&includeInfrastructure=true`,
+    );
 
     domainsData = await allDomains.find((domain) => domain.id === domainId);
     if (!domainsData) redirect(`/projects/${projectId}/domains`);
@@ -67,6 +68,7 @@ export default async function Domain(props) {
                     />
                     <HealthCard domain={domainsData} />
                     <InfrastuctureCard
+                        projectId={projectId}
                         domain={domainsData}
                         className="col-span-1 row-span-2"
                     />

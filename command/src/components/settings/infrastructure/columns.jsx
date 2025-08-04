@@ -27,10 +27,11 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
-import { YamlEditor } from "./editor";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { HclEditor } from "./editor";
+import { Separator } from "@/components/ui/separator";
+import { infrastructureVariableTypes } from "@/lib/template-variables";
 import { deleteTemplate, updateTemplate } from "@/actions/templates";
 import { Button } from "@/components/ui/button";
 import {
@@ -42,13 +43,33 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
-import { configurationVariableTypes } from "@/lib/template-variables";
+import { Tag } from "@/components/common/tag";
 
 export const columns = [
   {
     accessorKey: "name",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Name" />
+    ),
+  },
+  {
+    accessorKey: "platform",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Platform" />
+    ),
+    cell: ({ row }) => (
+      <Tag
+        color={
+          row.original.platform === "aws"
+            ? "amber"
+            : row.original.platform === "digitalocean"
+              ? "blue"
+              : "gray"
+        }
+        className="text-xs"
+      >
+        {row.original.platform}
+      </Tag>
     ),
   },
   {
@@ -65,6 +86,7 @@ export const columns = [
     cell: function Cell({ row }) {
       const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
       const [editDialogOpen, setEditDialogOpen] = useState(false);
+
       const [name, setName] = useState(row.original.name ?? "");
       const [nameError, setNameError] = useState(false);
 
@@ -127,7 +149,8 @@ export const columns = [
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Deleting a configuration template will permanently remove it.
+                  Deleting an infrastructure template will permanently remove
+                  it.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -153,11 +176,10 @@ export const columns = [
           <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
             <DialogContent className="min-w-[750px]">
               <DialogHeader>
-                <DialogTitle>Update Configuration Template</DialogTitle>
+                <DialogTitle>Update Infrastructure Template</DialogTitle>
                 <DialogDescription>
-                  Modify your Ansible configuration below to update a
-                  configuration template. Required fields are marked with an
-                  asterisk.
+                  Modify your Terraform code below to update an infrastructure
+                  template. Required fields are marked with an asterisk.
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4">
@@ -173,7 +195,7 @@ export const columns = [
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="name">Template*</Label>
-                  <YamlEditor
+                  <HclEditor
                     code={code}
                     setCode={(value) => {
                       setCode(value);
@@ -215,7 +237,7 @@ export const columns = [
                               <SelectValue placeholder="Type" />
                             </SelectTrigger>
                             <SelectContent>
-                              {configurationVariableTypes.map((type) => (
+                              {infrastructureVariableTypes.map((type) => (
                                 <SelectItem key={type.value} value={type.value}>
                                   {type.label}
                                 </SelectItem>

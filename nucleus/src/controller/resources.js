@@ -1,6 +1,6 @@
 import { db } from "../db/index.js";
 import { resources } from "../db/schema/resources.js";
-import { eq } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { deployments } from "../db/schema/deployments.js";
 import { integrations } from "../db/schema/integrations.js";
 import { infrastructure } from "../db/schema/infrastructure.js";
@@ -70,7 +70,15 @@ export const allResources = async (req, res) => {
                 await db
                     .update(resources)
                     .set({ tailscaleIp })
-                    .where(eq(resources.id, row.id));
+                    .where(
+                        and(
+                            eq(resources.id, row.id),
+                            inArray(resources.resourceType, [
+                                "aws_instance",
+                                "digitalocean_droplet",
+                            ]),
+                        ),
+                    );
             }
             row.tailscaleIp = tailscaleIp;
             return { ...row, tailscaleIp };

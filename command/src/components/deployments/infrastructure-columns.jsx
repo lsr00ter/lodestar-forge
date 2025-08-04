@@ -60,6 +60,7 @@ export const columns = () => [
                 case "configuring":
                 case "stopping":
                 case "default":
+                case "destroyed":
                     return (
                         <Tag className="self-start" color={"gray"}>
                             {status}
@@ -85,22 +86,28 @@ export const columns = () => [
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title="Resources" />
         ),
-        cell: ({ row }) => <p>{row.original.resources.length}</p>,
+        cell: ({ row }) => (
+            <p>
+                {row.original.resources.length > 0
+                    ? row.original.resources.length
+                    : "N/A"}
+            </p>
+        ),
     },
     {
-        id: "privateIp",
+        id: "domain",
         header: ({ column }) => (
-            <DataTableColumnHeader column={column} title="Private IP" />
+            <DataTableColumnHeader column={column} title="Domain" />
         ),
         cell: function Cell({ row }) {
-            var privateIps = row.original.resources.map(
-                (resource) => resource.privateIp,
+            var domains = row.original.resources.map(
+                (resource) => resource.domain,
             );
 
             // Remove duplicate and null values
-            privateIps = [...new Set(privateIps)].filter((n) => n);
+            domains = [...new Set(domains)].filter((n) => n);
 
-            if (privateIps.length > 1)
+            if (domains.length > 1)
                 return (
                     <TooltipProvider>
                         <Tooltip>
@@ -111,13 +118,13 @@ export const columns = () => [
                             </TooltipTrigger>
                             <TooltipContent>
                                 <p className="max-w-[100px]">
-                                    {privateIps.join(", ")}
+                                    {domains.join(", ")}
                                 </p>
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
                 );
-            return <p>{privateIps[0] || "N/A"}</p>;
+            return <p>{domains[0] || "N/A"}</p>;
         },
     },
     {

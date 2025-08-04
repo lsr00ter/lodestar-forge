@@ -1,0 +1,12 @@
+{
+    "name": "CloudFront Redirector (AWS)",
+    "type": "infrastructure",
+    "platform": "aws",
+    "variables": [
+        {
+            "name": "domain",
+            "type": "domain"
+        }
+    ],
+    "value": "resource \"aws_cloudfront_distribution\" \"cloudfront_redirector\" {\n  origin {\n    domain_name              = \"$$domain$$\"\n    origin_id                = \"$$domain$$\"\n    \n    custom_origin_config {\n      http_port              = 80\n      https_port             = 443\n      origin_protocol_policy = \"match-viewer\"\n      origin_ssl_protocols   = [\"TLSv1.2\"]\n    }\n  }\n  \n  enabled             = true\n\n  default_cache_behavior {\n    allowed_methods  = [\"DELETE\", \"GET\", \"HEAD\", \"OPTIONS\", \"PATCH\", \"POST\", \"PUT\"]\n    cached_methods   = [\"GET\", \"HEAD\"]\n    target_origin_id = \"$$domain$$\"\n\n    forwarded_values {\n      query_string = true\n\n      cookies {\n        forward = \"all\"\n      }\n    }\n\n    viewer_protocol_policy = \"allow-all\"\n    min_ttl                = 0\n    default_ttl            = 3600\n    max_ttl                = 86400\n  }\n\n  # Example restrictions block (required)\n  restrictions {\n    geo_restriction {\n      restriction_type = \"whitelist\"\n      locations        = [\"US\", \"CA\", \"GB\", \"DE\"]\n    }\n  }\n\n  viewer_certificate {\n    cloudfront_default_certificate = true\n  }\n}"
+}

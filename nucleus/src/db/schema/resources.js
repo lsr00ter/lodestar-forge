@@ -18,4 +18,5 @@ export const resources = pgTable("resources", {
     publicIp: text("publicIp"),
     privateIp: text("privateIp"),
     tailscaleIp: text("tailscaleIp"),
+    domain: text("domain"),
 });

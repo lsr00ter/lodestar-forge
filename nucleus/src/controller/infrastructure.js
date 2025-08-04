@@ -1,69 +1,11 @@
 import { db } from "../db/index.js";
 import { infrastructure } from "../db/schema/infrastructure.js";
-import { tailscaleUserData } from "../templates/system/general/tailscale_user_data.sh.js";
-import { eq } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { templates } from "../db/schema/templates.js";
 import fs from "fs";
 import path from "path";
-import { resources } from "../db/schema/resources.js";
 import { deployments } from "../db/schema/deployments.js";
-import { integrations } from "../db/schema/integrations.js";
-import { settings } from "../db/schema/settings.js";
-
-const updateTerraformResourceNames = (terraform, id) => {
-    return terraform.replace(
-        /resource\s+"([^"]+)"\s+"([^"]+)"/g,
-        (_, resourceType, resourceName) => {
-            const newResourceName = `${resourceName}_${id}`;
-            return `resource "${resourceType}" "${newResourceName}"`;
-        },
-    );
-};
-
-const injectSshKey = (resourceType, resource, region = "") => {
-    const lines = resource.split("\n");
-
-    if (resourceType === "aws_instance") {
-        lines.splice(
-            lines.length - 1,
-            0,
-            "\n  key_name = aws_key_pair.key_pair.key_name\n",
-        );
-    } else if (resourceType === "digitalocean_droplet") {
-        lines.splice(
-            lines.length - 1,
-            0,
-            "\n  ssh_keys = [digitalocean_ssh_key.key_pair.id]\n",
-            `\n  region = "${region}"\n`,
-        );
-    }
-    return lines.join("\n");
-};
-
-const injectUserDataScript = (resource, userDataScript) => {
-    const userDataField = `  user_data = <<-EOF${userDataScript}\n\tEOF\n`;
-    const lines = resource.split("\n");
-    lines.splice(lines.length - 1, 0, userDataField);
-    return lines.join("\n");
-};
-
-const injectTerraformVariables = (resource, variables) => {
-    return variables.reduce((acc, variable) => {
-        return acc.replaceAll(`$$${variable.name}$$`, variable.value);
-    }, resource);
-};
-
-const parseTerraformResource = (terraform) => {
-    const regex = /resource\s+"([^"]+)"\s+"([^"]+)"/;
-    const match = terraform.match(regex);
-    return match ? { type: match[1], name: match[2] } : null;
-};
-
-const extractTerraformResources = (terraform) => {
-    const resourceRegex =
-        /resource\s+"[\w-]+"\s+"[\w-]+"\s+\{(?:[^{}]*|\{[^{}]*\})*\}/g;
-    return terraform.match(resourceRegex) || [];
-};
+import { resources } from "../db/schema/resources.js";
 
 export const allInfrastructure = async (req, res) => {
     const { deploymentId } = req.params;
@@ -85,6 +27,7 @@ export const allInfrastructure = async (req, res) => {
 export const updateInfrastructure = async (req, res) => {
     const { infrastructureId } = req.params;
     const { name, description, configurations } = req.body;
+    let domain = null;
 
     if (name && name === "") {
         return res.status(400).json({ error: "'name' cannot be blank." });
@@ -101,10 +44,31 @@ export const updateInfrastructure = async (req, res) => {
                     if (nestedVar.type === "infrastructure-id") {
                         nestedVar.value = infrastructureId;
                     }
+
+                    if (nestedVar.type === "domain") {
+                        domain = nestedVar.value;
+                    }
                 });
+            }
+
+            if (variable.type === "domain") {
+                domain = variable.value;
             }
         });
     });
+
+    await db
+        .update(resources)
+        .set({ domain })
+        .where(
+            and(
+                eq(resources.infrastructureId, infrastructureId),
+                inArray(resources.resourceType, [
+                    "aws_instance",
+                    "digitalocean_droplet",
+                ]),
+            ),
+        );
 
     const updatedRow = await db
         .update(infrastructure)
@@ -119,6 +83,7 @@ export const createInfrastructure = async (req, res) => {
     try {
         const { deploymentId } = req.params;
 
+        // If deployment Id not provided, error
         if (!deploymentId) {
             return res
                 .status(400)
@@ -129,16 +94,19 @@ export const createInfrastructure = async (req, res) => {
         const { name, infrastructureTemplateId, description, variables } =
             req.body;
 
+        // Invalid name
         if (!name) {
             return res.status(400).json({ error: "error 'name' is required" });
         }
 
+        // Invalid template ID
         if (!infrastructureTemplateId) {
             return res.status(400).json({
                 error: "error 'infrastructureTemplateId' is required",
             });
         }
 
+        // If variables are invalid
         if (
             variables.length &&
             !variables.every((variable) => {
@@ -154,9 +122,7 @@ export const createInfrastructure = async (req, res) => {
                 .json({ error: "error 'variables' is invalid" });
         }
 
-        const deploymentDir = path.join("/app/deployments", deploymentId);
-        const terraformDir = path.join(deploymentDir, "terraform");
-
+        // Get deployment
         const [deployment] = await db
             .select({
                 tailscaleId: deployments.tailscaleId,
@@ -165,140 +131,34 @@ export const createInfrastructure = async (req, res) => {
             .from(deployments)
             .where(eq(deployments.id, deploymentId));
 
-        const [tailscaleKey] = await db
-            .select()
-            .from(integrations)
-            .where(eq(integrations.id, deployment.tailscaleId));
-
+        // Get template
         const [template] = await db
             .select()
             .from(templates)
             .where(eq(templates.id, infrastructureTemplateId));
 
-        const [newInfrastructure] = await db
+        // TODO: Check variables in template match variables provided
+
+        const [tempInfrastructure] = await db
             .insert(infrastructure)
             .values({
                 deploymentId,
                 name,
-                infrastructureTemplateId,
                 description,
             })
             .returning();
 
-        const settingsData = await db.select().from(settings);
-        const tagSetting = settingsData.find(
-            (setting) => setting.name === "tailscaleTag",
-        );
-        const userDataSetting = settingsData.find(
-            (setting) => setting.name === "userData",
-        );
-
         const updatedVariables = variables.map((v) => {
             if (v.type === "infrastructure-id") {
-                return { ...v, value: newInfrastructure.id };
+                return { ...v, value: tempInfrastructure.id };
             }
             return v;
         });
 
-        const resourceArray = extractTerraformResources(template.value);
-        let finalContent = "";
-        const updatedResourceMappings = [];
-
-        await Promise.all(
-            resourceArray.map(async (resource) => {
-                const resourceUUID = crypto.randomUUID();
-                const oldParsedResource = parseTerraformResource(resource);
-
-                let updatedResource = injectTerraformVariables(
-                    resource,
-                    updatedVariables,
-                );
-                updatedResource = updateTerraformResourceNames(
-                    updatedResource,
-                    resourceUUID,
-                );
-
-                if (
-                    oldParsedResource.type === "aws_instance" ||
-                    oldParsedResource.type === "digitalocean_droplet"
-                ) {
-                    updatedResource = injectSshKey(
-                        oldParsedResource.type,
-                        updatedResource,
-                        deployment.region,
-                    );
-
-                    const tailscaleResult = await fetch(
-                        "https://api.tailscale.com/api/v2/tailnet/-/keys?all=true",
-                        {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                                Authorization: `Bearer ${tailscaleKey.secretKey}`,
-                            },
-                            body: JSON.stringify({
-                                capabilities: {
-                                    devices: {
-                                        create: {
-                                            reusable: false,
-                                            ephemeral: true,
-                                            preauthorized: true,
-                                            tags: tagSetting?.value
-                                                ? [`tag:${tagSetting.value}`]
-                                                : [],
-                                        },
-                                    },
-                                },
-                                expirySeconds: 86400,
-                            }),
-                        },
-                    );
-
-                    const newKey = await tailscaleResult.json();
-
-                    const userDataScript = tailscaleUserData({
-                        authKey: newKey.key,
-                        resourceId: newInfrastructure.id,
-                        resourceName: name,
-                        custom: userDataSetting?.value
-                            ? userDataSetting.value
-                            : "",
-                    });
-
-                    updatedResource = injectUserDataScript(
-                        updatedResource,
-                        userDataScript,
-                    );
-                }
-
-                finalContent = finalContent.concat(updatedResource + "\n\n");
-
-                const newParsedResource =
-                    parseTerraformResource(updatedResource);
-                updatedResourceMappings.push({
-                    old: `${oldParsedResource?.type}.${oldParsedResource?.name}`,
-                    new: `${newParsedResource?.type}.${newParsedResource?.name}`,
-                });
-
-                await db.insert(resources).values({
-                    id: resourceUUID,
-                    infrastructureId: newInfrastructure.id,
-                    infrastructureTemplateId,
-                    resourceType: newParsedResource.type,
-                    resourceName: newParsedResource.name,
-                    status: "pending",
-                });
-            }),
-        );
-
-        updatedResourceMappings.forEach((mapping) => {
-            finalContent = finalContent.replace(mapping.old, mapping.new);
-        });
-
-        fs.writeFileSync(
-            path.join(terraformDir, `${newInfrastructure.id}.tf`),
-            finalContent,
-        );
+        const [newInfrastructure] = await db
+            .update(infrastructure)
+            .set({ template: { id: template.id, variables: updatedVariables } })
+            .where(eq(infrastructure.id, tempInfrastructure.id));
 
         return res.status(200).json(newInfrastructure);
     } catch (error) {
