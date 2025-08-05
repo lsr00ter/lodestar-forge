@@ -4,11 +4,12 @@ import {
     createDnsRecord,
     deleteDnsRecord,
 } from "../controller/dns.js";
+import { authenticatedOperator } from "../middleware/auth.js";
 
 const router = express.Router({ mergeParams: true });
 
 router.get("/", allRecords);
-router.post("/", createDnsRecord);
-router.delete("/:dnsRecordId", deleteDnsRecord);
+router.post("/", authenticatedOperator, createDnsRecord);
+router.delete("/:dnsRecordId", authenticatedOperator, deleteDnsRecord);
 
 export { router };

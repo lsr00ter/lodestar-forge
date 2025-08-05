@@ -5,12 +5,17 @@ import {
     deleteInfrastructure,
     updateInfrastructure,
 } from "../controller/infrastructure.js";
+import { authenticatedOperator } from "../middleware/auth.js";
 
 const router = express.Router({ mergeParams: true });
 
 router.get("/", allInfrastructure);
-router.post("/", createInfrastructure);
-router.put("/:infrastructureId", updateInfrastructure);
-router.delete("/:infrastructureId", deleteInfrastructure);
+router.post("/", authenticatedOperator, createInfrastructure);
+router.put("/:infrastructureId", authenticatedOperator, updateInfrastructure);
+router.delete(
+    "/:infrastructureId",
+    authenticatedOperator,
+    deleteInfrastructure,
+);
 
 export { router };

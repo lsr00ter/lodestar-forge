@@ -159,8 +159,8 @@ Below is an outline of the planned features for the upcoming major releases of L
 - [x] Deployments "destroyed" state
 - [x] Ansible debugging options
 - [x] Improved domains functionality
+- [x] Working user account roles
 - [ ] Integration "test connection" button
-- [ ] Working user account roles
 - [ ] Appearance settings
 - [ ] Quick install script and one-liner
 

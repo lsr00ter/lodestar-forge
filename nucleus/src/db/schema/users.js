@@ -4,9 +4,9 @@ import crypto from "crypto";
 import { getTableColumns } from "drizzle-orm";
 
 export const userRoleEnum = pgEnum("userRole", [
-    "admin",
-    "operator",
-    "readonly",
+    "admin", // Full access to everything
+    "operator", // Can manage projects, domains, and infrastructure. Cannot manager users or integrations.
+    "readonly", // Can view projects, domains, and infrastructure. Cannot change / delete anything.
     "service",
 ]);
 
