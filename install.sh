@@ -22,20 +22,27 @@ install_docker() {
         echo "${BLUE}Docker not found. Installing Docker...${NC}"
         curl -fsSL https://get.docker.com | sh
         sudo usermod -aG docker $USER
-        echo "${GREEN}Docker installed. You may need to restart your terminal for group changes to apply.${NC}"
+        echo "${GREEN}Docker installed. You may need to restart your terminal or log out/in for permissions to apply.${NC}"
     else
         echo "${GREEN}Docker is already installed.${NC}"
+    fi
+
+    # Re-check to see if docker is usable (use sudo fallback)
+    if ! sudo docker version &> /dev/null; then
+        echo "${BLUE}Docker installed but not accessible to current user. Using sudo for docker commands...${NC}"
+        export USE_SUDO=true
     fi
 }
 
 install_docker_compose() {
     echo "${BLUE}Checking Docker Compose...${NC}"
-    if ! docker compose version &> /dev/null; then
-        echo "${BLUE}Docker Compose not found. Installing...${NC}"
+
+    if ! sudo docker compose version &> /dev/null; then
+        echo "${BLUE}Docker Compose not found or not working. Installing...${NC}"
         sudo curl -L "https://github.com/docker/compose/releases/download/v${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
         sudo chmod +x /usr/local/bin/docker-compose
     else
-        echo "${GREEN}Docker Compose is already installed.${NC}"
+        echo "${GREEN}Docker Compose is already installed and working.${NC}"
     fi
 }
 
@@ -53,7 +60,7 @@ clone_or_update_repo() {
 }
 
 configure_project() {
-    if [ ! -f "$INSTALL_DIR/.env"]; then
+    if [ ! -f "$INSTALL_DIR/.env" ]; then
         echo "${BLUE}Configuring Lodestar Forge...${NC}"
         sudo cp "$INSTALL_DIR/example.env" "$INSTALL_DIR/.env"
 
@@ -77,10 +84,39 @@ configure_project() {
 
 start_project() {
     echo "${BLUE}Starting Lodestar-Forge using Docker Compose...${NC}"
-    cd Lodestar-Forge
-    docker compose up -d --build
+    cd "$INSTALL_DIR"
+
+    if [ "$USE_SUDO" = true ]; then
+        sudo docker compose up -d --build
+    else
+        docker compose up -d --build
+    fi
+
     echo "${GREEN}Lodestar-Forge is now running!${NC}"
 }
+
+show_admin_credentials() {
+    echo "${BLUE}Waiting for nucleus container to initialize...${NC}"
+
+    # Wait for the container to be healthy or log output
+    sleep 20  # adjust this if needed
+
+    echo "${BLUE}Retrieving admin credentials from container logs...${NC}"
+
+    CONTAINER_ID=$(sudo docker ps --filter "name=nucleus" --format "{{.ID}}" | head -n 1)
+
+    # Get logs and extract the password line
+    CREDENTIAL_LINE=$(sudo docker logs "$CONTAINER_ID" 2>&1 | grep -A 2 "Forge Admin Credentials" | grep "Password")
+
+    if [ -n "$CREDENTIAL_LINE" ]; then
+        PASSWORD=$(echo "$CREDENTIAL_LINE" | awk -F'Password: ' '{print $2}')
+        echo "${GREEN}Lodestar Forge is now running. The following credentials can be used to access the application: ${NC}"
+        echo " "
+        echo "${BLUE}Email: admin@lodestar-forge.local${NC}"
+        echo "${BLUE}Password: $PASSWORD${NC}"
+    fi
+}
+
 
 # --- Execution ---
 
@@ -89,3 +125,4 @@ install_docker_compose
 clone_or_update_repo
 configure_project
 start_project
+show_admin_credentials
