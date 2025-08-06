@@ -61,9 +61,11 @@ configure_project() {
 
         COUNT=$(grep -o "REPLACE_WITH_SECRET_STRING" "$INSTALL_DIR/.env" | wc -l)
 
-        for ((i = 1; i <= COUNT; i++)); do
+        i=1
+        while [ "$i" -le "$COUNT" ]; do
             SECRET=$(openssl rand -hex 32)
             sed -i "0,/REPLACE_WITH_SECRET_STRING/s|REPLACE_WITH_SECRET_STRING|$SECRET|" "$INSTALL_DIR/.env"
+            i=$((i + 1))
         done
 
         echo "${GREEN}Lodestar Forge successfully configured...${NC}"
