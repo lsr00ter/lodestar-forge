@@ -5,12 +5,13 @@ import {
     updateTemplate,
     deleteTemplate,
 } from "../controller/templates.js";
+import { authenticatedOperator } from "../middleware/auth.js";
 
 const router = express.Router();
 
 router.get("/", allTemplates);
-router.post("/", createTemplate);
-router.put("/:templateId", updateTemplate);
-router.delete("/:templateId", deleteTemplate);
+router.post("/", authenticatedOperator, createTemplate);
+router.put("/:templateId", authenticatedOperator, updateTemplate);
+router.delete("/:templateId", authenticatedOperator, deleteTemplate);
 
 export { router };

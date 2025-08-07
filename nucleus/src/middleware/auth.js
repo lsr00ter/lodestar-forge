@@ -33,3 +33,77 @@ export const authenticatedUser = (req, res, next) => {
         next();
     });
 };
+
+export const authenticatedAdminOrService = (req, res, next) => {
+    // Get accessToken
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
+
+    // If token doesnt exits
+    if (token == null) return res.status(401).json({ error: "Unauthorized" });
+
+    jwt.verify(token, process.env.NUCLEUS_SECRET, async (err, body) => {
+        // If jwt verify failed, return error
+        if (err) return res.status(401).json({ error: "Unauthorized" });
+
+        // Check user exists in DB
+        const rows = await db
+            .select({ id: users.id, name: users.name, role: users.role })
+            .from(users)
+            .where(eq(users.id, body.id));
+
+        // If not, return error
+        if (rows.length < 1)
+            return res.status(401).json({ error: "Unauthorized" });
+
+        // If not admin or service, return error
+        if (rows[0]?.role !== "admin" && rows[0]?.role !== "service")
+            return res.status(403).json({ error: "Forbidden" });
+
+        // All else, allow access to protected route
+        res.locals.user = {
+            id: rows[0]?.id,
+            name: rows[0]?.name,
+        };
+        next();
+    });
+};
+
+export const authenticatedOperator = (req, res, next) => {
+    // Get accessToken
+    const authHeader = req.headers["authorization"];
+    const token = authHeader && authHeader.split(" ")[1];
+
+    // If token doesnt exits
+    if (token == null) return res.status(401).json({ error: "Unauthorized" });
+
+    jwt.verify(token, process.env.NUCLEUS_SECRET, async (err, body) => {
+        // If jwt verify failed, return error
+        if (err) return res.status(401).json({ error: "Unauthorized" });
+
+        // Check user exists in DB
+        const rows = await db
+            .select({ id: users.id, name: users.name, role: users.role })
+            .from(users)
+            .where(eq(users.id, body.id));
+
+        // If not, return error
+        if (rows.length < 1)
+            return res.status(401).json({ error: "Unauthorized" });
+
+        // If not admin, service or operator, return error
+        if (
+            rows[0]?.role !== "admin" &&
+            rows[0]?.role !== "service" &&
+            rows[0]?.role !== "operator"
+        )
+            return res.status(403).json({ error: "Forbidden" });
+
+        // All else, allow access to protected route
+        res.locals.user = {
+            id: rows[0]?.id,
+            name: rows[0]?.name,
+        };
+        next();
+    });
+};

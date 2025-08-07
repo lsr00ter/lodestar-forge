@@ -109,8 +109,14 @@ The following prerequisites are required to deploy infrastructure with Forge:
 * An AWS or Digital Ocean account
 * Tailscale
 
+### Convenience Script (Beta)
+To install Forge using the convenience script, execute the following command:
 
-### Installation
+```sh
+curl -fsSL https://install.lodestar-forge.com | sh
+```
+
+### Manual Installation
 
 1. To get started with Forge, first clone this GitHub repository.
 ```bash
@@ -159,10 +165,10 @@ Below is an outline of the planned features for the upcoming major releases of L
 - [x] Deployments "destroyed" state
 - [x] Ansible debugging options
 - [x] Improved domains functionality
+- [x] Working user account roles
+- [x] Appearance settings
+- [x] Quick install script and one-liner
 - [ ] Integration "test connection" button
-- [ ] Working user account roles
-- [ ] Appearance settings
-- [ ] Quick install script and one-liner
 
 **Version 0.3.x**
 - [ ] Template variable regex support

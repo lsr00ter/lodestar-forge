@@ -4,11 +4,12 @@ import {
     createSshKey,
     deleteSshKey,
 } from "../controller/sshKeys.js";
+import { authenticatedOperator } from "../middleware/auth.js";
 
 const router = express.Router();
 
 router.get("/", allSshKeys);
-router.post("/", createSshKey);
-router.delete("/:sshKeyId", deleteSshKey);
+router.post("/", authenticatedOperator, createSshKey);
+router.delete("/:sshKeyId", authenticatedOperator, deleteSshKey);
 
 export { router };

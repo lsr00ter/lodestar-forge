@@ -33,7 +33,7 @@ app.use(express.json());
 
 // Use routes
 app.use("/auth", authRoutes);
-app.use("/logs", logRoutes);
+app.use("/logs", authenticatedUser, logRoutes);
 app.use("/ssh-keys", authenticatedUser, sshKeyRoutes);
 app.use("/users", authenticatedUser, userRoutes);
 app.use("/integrations", authenticatedUser, integrationRoutes);
