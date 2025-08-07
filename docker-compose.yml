@@ -11,9 +11,7 @@ services:
             - pgdata:/var/lib/postgresql/data
 
     nucleus:
-        build:
-            context: ./nucleus
-            dockerfile: Dockerfile
+        image: c0nf1den71al/lodestar-forge-nucleus:latest
         ports:
             - ${NUCLEUS_PORT:-}:${NUCLEUS_PORT:-}
         environment:
@@ -35,9 +33,7 @@ services:
             - /dev/net/tun # Needed by tailscale
 
     command:
-        build:
-            context: ./command
-            dockerfile: Dockerfile
+        image: c0nf1den71al/lodestar-forge-command:latest
         ports:
             - 3000:3000
         environment:
@@ -51,9 +47,7 @@ services:
             - store
 
     radar:
-        build:
-            context: ./radar
-            dockerfile: Dockerfile
+        image: c0nf1den71al/lodestar-forge-radar:latest
         environment:
             VT_API_KEY: ${VT_API_KEY:-}
             NUCLEUS_PORT: ${NUCLEUS_PORT:-}
