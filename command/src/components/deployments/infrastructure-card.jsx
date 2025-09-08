@@ -81,7 +81,6 @@ export function InfrastructureCard({
     );
 
     const resources = infrastructure.map((item) => item.resources).flat();
-
     const hosts = resources.filter(
         (resource) =>
             resource.resourceType === "aws_instance" ||
