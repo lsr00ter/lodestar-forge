@@ -24,6 +24,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Tag } from "@/components/common/tag";
+import { LoaderCircle } from "lucide-react";
 
 import { addIntegration, checkIntegration } from "@/actions/integrations";
 
@@ -45,6 +46,7 @@ export function CreateIntegration() {
     const [useIamRole, setUseIamRole] = useState(false);
 
     const [checkError, setCheckError] = useState();
+    const [checkLoading, setCheckLoading] = useState(false);
 
     const addIntegrationHandler = async () => {
         if (!name) return setNameError(true);
@@ -57,7 +59,6 @@ export function CreateIntegration() {
         } else if (integration !== "aws" && !secretKey) {
             return setSecretKeyError(true);
         }
-
         const result = await addIntegration(
             name,
             integration,
@@ -92,6 +93,7 @@ export function CreateIntegration() {
             return setSecretKeyError(true);
         }
 
+        setCheckLoading(true);
         const result = await checkIntegration(
             integration,
             useIamRole ? "" : keyId,
@@ -104,6 +106,8 @@ export function CreateIntegration() {
         } else {
             setCheckError("invalid");
         }
+
+        setCheckLoading(false);
     };
 
     return (
@@ -233,17 +237,25 @@ export function CreateIntegration() {
                         </p>
                     )}
 
-                    <Button
-                        disabled={
-                            integration === "" ||
-                            secretKey === "" ||
-                            (integration === "aws" && keyId == "")
-                        }
-                        variant={"secondary"}
-                        onClick={() => checkIntegrationHandler()}
-                    >
-                        Test
-                    </Button>
+                    {checkLoading ? (
+                        <Button disabled variant={"secondary"}>
+                            <LoaderCircle className="animate-spin" />
+                        </Button>
+                    ) : (
+                        <Button
+                            disabled={
+                                integration === "" ||
+                                secretKey === "" ||
+                                (integration === "aws" && keyId == "") ||
+                                checkLoading
+                            }
+                            variant={"secondary"}
+                            onClick={() => checkIntegrationHandler()}
+                        >
+                            Test
+                        </Button>
+                    )}
+
                     <Button
                         type="button"
                         disabled={
