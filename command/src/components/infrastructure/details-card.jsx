@@ -15,7 +15,7 @@ import { Tag } from "../common/tag";
 
 export function DetailsCard({ className, infrastructure, templates }) {
     const status = infrastructure.status;
-    var template = templates.find((t) => t.id === infrastructure.template.id);
+    var template = templates.find((t) => t.id === infrastructure?.template?.id);
 
     if (!template)
         template =
