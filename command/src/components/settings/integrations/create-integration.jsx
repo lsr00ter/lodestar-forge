@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
     Select,
     SelectContent,
@@ -23,8 +24,9 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Tag } from "@/components/common/tag";
+import { LoaderCircle } from "lucide-react";
 
-import { addIntegration } from "@/actions/integrations";
+import { addIntegration, checkIntegration } from "@/actions/integrations";
 
 export function CreateIntegration() {
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -41,30 +43,71 @@ export function CreateIntegration() {
     const [secretKey, setSecretKey] = useState("");
     const [secretKeyError, setSecretKeyError] = useState(false);
 
+    const [useIamRole, setUseIamRole] = useState(false);
+
+    const [checkError, setCheckError] = useState();
+    const [checkLoading, setCheckLoading] = useState(false);
+
     const addIntegrationHandler = async () => {
         if (!name) return setNameError(true);
         if (!integration) return setIntegrationError(true);
 
-        if (integration === "aws" && !keyId) return setKeyIdError(true);
-        if (!secretKey) return setSecretKeyError(true);
-
+        // Validate credentials based on IAM role usage
+        if (integration === "aws" && !useIamRole) {
+            if (!keyId) return setKeyIdError(true);
+            if (!secretKey) return setSecretKeyError(true);
+        } else if (integration !== "aws" && !secretKey) {
+            return setSecretKeyError(true);
+        }
         const result = await addIntegration(
             name,
             integration,
-            keyId,
-            secretKey,
+            useIamRole ? "" : keyId,
+            useIamRole && integration === "aws" ? "" : secretKey,
+            useIamRole,
         );
         if (result) {
             setName("");
             setIntegration("");
             setKeyId("");
             setSecretKey("");
+            setUseIamRole(false);
             setNameError(false);
             setIntegrationError(false);
             setKeyIdError(false);
             setSecretKeyError(false);
             setDialogOpen(false);
+            setCheckError(null);
         }
+    };
+
+    const checkIntegrationHandler = async () => {
+        if (!name) return setNameError(true);
+        if (!integration) return setIntegrationError(true);
+
+        // Validate credentials based on IAM role usage
+        if (integration === "aws" && !useIamRole) {
+            if (!keyId) return setKeyIdError(true);
+            if (!secretKey) return setSecretKeyError(true);
+        } else if (integration !== "aws" && !secretKey) {
+            return setSecretKeyError(true);
+        }
+
+        setCheckLoading(true);
+        const result = await checkIntegration(
+            integration,
+            useIamRole ? "" : keyId,
+            useIamRole && integration === "aws" ? "" : secretKey,
+            useIamRole,
+        );
+
+        if (result) {
+            setCheckError("valid");
+        } else {
+            setCheckError("invalid");
+        }
+
+        setCheckLoading(false);
     };
 
     return (
@@ -101,7 +144,13 @@ export function CreateIntegration() {
                         )}
                         <Select
                             value={integration}
-                            onValueChange={setIntegration}
+                            onValueChange={(value) => {
+                                setIntegration(value);
+                                // Reset IAM role when changing platforms
+                                if (value !== "aws") {
+                                    setUseIamRole(false);
+                                }
+                            }}
                         >
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a integration" />
@@ -123,6 +172,28 @@ export function CreateIntegration() {
                         </Select>
                     </div>
                     {integration === "aws" && (
+                        <div className="flex items-center gap-2">
+                            <Checkbox
+                                id="useIamRole"
+                                checked={useIamRole}
+                                onCheckedChange={setUseIamRole}
+                            />
+                            <Label
+                                htmlFor="useIamRole"
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                                Use IAM Role
+                            </Label>
+                        </div>
+                    )}
+                    {integration === "aws" && useIamRole && (
+                        <p className="text-blue-500 text-xs">
+                            When using IAM roles, ensure your EC2 instance has
+                            the necessary IAM role attached with appropriate AWS
+                            permissions. No static credentials will be stored.
+                        </p>
+                    )}
+                    {integration === "aws" && !useIamRole && (
                         <div className="grid gap-2">
                             <Label htmlFor="keyId">Key ID*</Label>
                             <Input
@@ -136,38 +207,64 @@ export function CreateIntegration() {
                             />
                         </div>
                     )}
-                    <div className="grid gap-2">
-                        <Label htmlFor="secretKey">Secret Key*</Label>
-                        <Input
-                            id="secretKey"
-                            placeholder="••••••••••••"
-                            value={secretKey}
-                            type="password"
-                            className={
-                                secretKeyError ? "border border-red-500" : ""
-                            }
-                            onChange={(e) => setSecretKey(e.target.value)}
-                        />
-                    </div>
+                    {(!useIamRole || integration !== "aws") && (
+                        <div className="grid gap-2">
+                            <Label htmlFor="secretKey">Secret Key*</Label>
+                            <Input
+                                id="secretKey"
+                                placeholder="••••••••••••"
+                                value={secretKey}
+                                type="password"
+                                className={
+                                    secretKeyError
+                                        ? "border border-red-500"
+                                        : ""
+                                }
+                                onChange={(e) => setSecretKey(e.target.value)}
+                            />
+                        </div>
+                    )}
                 </div>
                 <DialogFooter>
-                    {/* <Button
-            disabled={
-              integration === "" ||
-              secretKey === "" ||
-              (integration === "aws" && keyId == "")
-            }
-            variant={"secondary"}
-          >
-            Test
-          </Button>*/}
+                    {checkError === "valid" && (
+                        <p className="text-green-500 text-xs h-full flex items-center w-full">
+                            Integration successfully validated.
+                        </p>
+                    )}
+                    {checkError === "invalid" && (
+                        <p className="text-red-500 text-xs h-full flex items-center w-full">
+                            Invalid integration details. Please try again.
+                        </p>
+                    )}
+
+                    {checkLoading ? (
+                        <Button disabled variant={"secondary"}>
+                            <LoaderCircle className="animate-spin" />
+                        </Button>
+                    ) : (
+                        <Button
+                            disabled={
+                                integration === "" ||
+                                secretKey === "" ||
+                                (integration === "aws" && keyId == "") ||
+                                checkLoading
+                            }
+                            variant={"secondary"}
+                            onClick={() => checkIntegrationHandler()}
+                        >
+                            Test
+                        </Button>
+                    )}
+
                     <Button
                         type="button"
                         disabled={
                             name == "" ||
                             integration == "" ||
-                            secretKey == "" ||
-                            (integration === "aws" && keyId == "")
+                            (integration === "aws" &&
+                                !useIamRole &&
+                                (keyId == "" || secretKey == "")) ||
+                            (integration !== "aws" && secretKey == "")
                         }
                         onClick={() => addIntegrationHandler()}
                     >

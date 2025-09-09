@@ -168,7 +168,8 @@ Below is an outline of the planned features for the upcoming major releases of L
 - [x] Working user account roles
 - [x] Appearance settings
 - [x] Quick install script and one-liner
-- [ ] Integration "test connection" button
+- [x] AWS IAM role support
+- [x] Integration "test connection" button
 
 **Version 0.3.x**
 - [ ] Template variable regex support

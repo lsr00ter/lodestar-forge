@@ -55,10 +55,17 @@ export default async function Infrastructure(props) {
     const templates = await apiFetch(`/templates`);
     const files = await apiFetch(`/files`);
 
-    const hosts = infrastructureData.resources.filter(
-        (resource) =>
-            resource.resourceType === "aws_instance" ||
-            resource.resourceType === "digitalocean_droplet",
+    const hosts = allInfrastructure.flatMap((parent) =>
+        (parent.resources || [])
+            .filter(
+                (resource) =>
+                    resource.resourceType === "aws_instance" ||
+                    resource.resourceType === "digitalocean_droplet",
+            )
+            .map((resource) => ({
+                ...resource,
+                name: parent.name,
+            })),
     );
 
     return (
